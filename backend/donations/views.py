@@ -1,7 +1,7 @@
 from django.db import transaction
 from django.utils import timezone
 from django.db.models import Sum, Count, Q
-from rest_framework import status, permissions
+from rest_framework import status, permissions, parsers
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import FoodDonation, DonationRequest
@@ -12,6 +12,7 @@ from accounts.models import User, OrganizationProfile, AuditLog
 
 class DonationListCreateView(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser, parsers.JSONParser]
 
     def get(self, request):
         # Update expired statuses on the fly
@@ -213,7 +214,10 @@ class DonorIncomingRequestsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        requests = DonationRequest.objects.filter(donation__donor=request.user).order_by('-created_at')
+        if request.user.role == 'ADMIN':
+            requests = DonationRequest.objects.all().order_by('-created_at')
+        else:
+            requests = DonationRequest.objects.filter(donation__donor=request.user).order_by('-created_at')
         serializer = DonationRequestSerializer(requests, many=True, context={'request': request})
         return Response(serializer.data)
 

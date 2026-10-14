@@ -3,12 +3,12 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   HeartHandshake, LogIn, Eye, EyeOff, Lock, User, Mail,
-  AlertCircle, CheckCircle2, Sparkles, ArrowRight, ShieldCheck,
+  AlertCircle, CheckCircle2, ArrowRight, ShieldCheck,
   Utensils, HelpCircle, X
 } from 'lucide-react';
 
 export default function Login() {
-  const { user, login, demoLogin } = useAuth();
+  const { user, login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -74,18 +74,6 @@ export default function Login() {
       redirectByRole(res.user.role);
     } else {
       setError(res.error || 'Invalid credentials. Please verify your username and password.');
-    }
-  };
-
-  const handleDemo = async (role) => {
-    setLoading(true);
-    setError('');
-    const res = await demoLogin(role);
-    setLoading(false);
-    if (res.success) {
-      redirectByRole(res.user.role);
-    } else {
-      setError(res.error || 'Demo login failed.');
     }
   };
 
@@ -217,47 +205,6 @@ export default function Login() {
                 <span>{loading ? 'Authenticating...' : 'Sign In'}</span>
               </button>
             </form>
-
-            {/* Quick Demo Accounts Helper */}
-            <div className="mt-6 pt-5 border-t border-gray-100 space-y-2.5">
-              <div className="flex items-center justify-between text-xs font-bold text-gray-500">
-                <span className="flex items-center gap-1.5 text-amber-800">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                  <span>1-Click Test Demo Logins:</span>
-                </span>
-                <span className="text-[11px] font-normal text-gray-400">Pre-seeded accounts</span>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                <button
-                  type="button"
-                  onClick={() => handleDemo('DONOR')}
-                  className="p-2 text-center rounded-xl border border-gray-200 hover:border-emerald-500 hover:bg-emerald-50/50 font-semibold text-gray-700 transition"
-                >
-                  🏨 Hotel Donor
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDemo('NGO')}
-                  className="p-2 text-center rounded-xl border border-gray-200 hover:border-blue-500 hover:bg-blue-50/50 font-semibold text-gray-700 transition"
-                >
-                  🤝 Verified NGO
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDemo('VOLUNTEER')}
-                  className="p-2 text-center rounded-xl border border-gray-200 hover:border-amber-500 hover:bg-amber-50/50 font-semibold text-gray-700 transition"
-                >
-                  🚴 Volunteer
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDemo('ADMIN')}
-                  className="p-2 text-center rounded-xl border border-gray-200 hover:border-purple-500 hover:bg-purple-50/50 font-semibold text-gray-700 transition"
-                >
-                  🛡️ Admin
-                </button>
-              </div>
-            </div>
           </div>
 
           {/* Bottom Call to Action */}
@@ -347,7 +294,6 @@ export default function Login() {
             <div className="p-3.5 bg-gray-50 rounded-2xl border border-gray-100 text-xs space-y-1 text-gray-600">
               <p>• Contact support: <strong>support@foodbridge.org</strong></p>
               <p>• Phone hotline: <strong>+1 555-0199</strong></p>
-              <p>• Or log in with one of our preset <strong>Demo Accounts</strong>.</p>
             </div>
 
             <button

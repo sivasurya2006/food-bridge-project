@@ -25,7 +25,7 @@ class FoodDonation(models.Model):
     donor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='donations')
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True, default='')
-    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='Cooked Meals')
+    category = models.CharField(max_length=100, default='General Food')
     quantity = models.PositiveIntegerField()
     reserved_quantity = models.PositiveIntegerField(default=0)
     unit = models.CharField(max_length=30, default='servings')

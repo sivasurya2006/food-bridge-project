@@ -9,17 +9,21 @@ import {
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [organizations, setOrganizations] = useState([]);
+  const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
+  const [approvingReqId, setApprovingReqId] = useState(null);
 
   const loadData = async () => {
     try {
-      const [statsRes, orgRes] = await Promise.all([
+      const [statsRes, orgRes, reqRes] = await Promise.all([
         api.getAnalyticsSummary(),
         api.getOrganizations(),
+        api.getDonorIncomingRequests(),
       ]);
       setStats(statsRes.data);
       setOrganizations(orgRes.data);
+      setRequests(reqRes.data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -30,6 +34,19 @@ export default function AdminDashboard() {
   useEffect(() => {
     loadData();
   }, []);
+
+  const handleApproveRequest = async (id) => {
+    setApprovingReqId(id);
+    try {
+      const res = await api.approveRequest(id);
+      alert(`Request approved by Admin! Pickup task generated with OTP: ${res.data.pickup_otp}. Volunteers can now accept this in the Volunteer Hub.`);
+      loadData();
+    } catch (err) {
+      alert(err.response?.data?.error || "Failed to approve request.");
+    } finally {
+      setApprovingReqId(null);
+    }
+  };
 
   const handleVerify = async (id, status) => {
     setActionLoading(id);
@@ -167,6 +184,88 @@ export default function AdminDashboard() {
                         >
                           Reject
                         </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Platform Food Requests & Dispatch Queue */}
+      <div className="bg-white rounded-3xl border border-gray-100 p-6 space-y-4 shadow-xs">
+        <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">Food Donation Requests & Volunteer Dispatch</h2>
+            <p className="text-xs text-gray-500">
+              Review requests from NGOs and dispatch volunteer drivers by approving pending allocations.
+            </p>
+          </div>
+          <span className="text-xs text-gray-400 font-semibold">{requests.length} total requests</span>
+        </div>
+
+        {loading ? (
+          <div className="py-8 text-center text-xs text-gray-400">Loading requests...</div>
+        ) : requests.length === 0 ? (
+          <div className="py-8 text-center text-xs text-gray-400">No donation requests submitted yet.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs text-left">
+              <thead className="text-[11px] font-bold text-gray-400 uppercase border-b border-gray-100">
+                <tr>
+                  <th className="pb-3">Req ID</th>
+                  <th className="pb-3">Food Listing</th>
+                  <th className="pb-3">Donor</th>
+                  <th className="pb-3">Requesting NGO</th>
+                  <th className="pb-3">Qty Requested</th>
+                  <th className="pb-3">Status</th>
+                  <th className="pb-3">Pickup Task</th>
+                  <th className="pb-3 text-right">Admin Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {requests.map((r) => (
+                  <tr key={r.id} className="hover:bg-gray-50/50 transition">
+                    <td className="py-3.5 font-mono font-bold text-gray-400">#{r.id}</td>
+                    <td className="py-3.5 font-bold text-gray-900">{r.donation_title}</td>
+                    <td className="py-3.5 text-gray-600">{r.donor_username}</td>
+                    <td className="py-3.5 text-gray-800 font-medium">{r.receiver_org_name || r.receiver_username}</td>
+                    <td className="py-3.5 text-emerald-700 font-bold">{r.requested_quantity} {r.donation_unit}</td>
+                    <td className="py-3.5">
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                        r.status === 'APPROVED' ? 'bg-blue-100 text-blue-800' :
+                        r.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-800' :
+                        r.status === 'PENDING' ? 'bg-amber-100 text-amber-800' :
+                        'bg-rose-100 text-rose-800'
+                      }`}>
+                        {r.status}
+                      </span>
+                    </td>
+                    <td className="py-3.5">
+                      {r.pickup_id ? (
+                        <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700 text-[10px] font-mono">
+                          Pickup #{r.pickup_id} ({r.pickup_status})
+                        </span>
+                      ) : (
+                        <span className="text-gray-400 text-[11px] italic">Not generated</span>
+                      )}
+                    </td>
+                    <td className="py-3.5 text-right">
+                      {r.status === 'PENDING' && (
+                        <button
+                          onClick={() => handleApproveRequest(r.id)}
+                          disabled={approvingReqId === r.id}
+                          className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 text-white font-bold text-[11px] rounded-lg shadow-2xs transition"
+                        >
+                          {approvingReqId === r.id ? 'Approving...' : 'Approve & Dispatch Volunteer'}
+                        </button>
+                      )}
+                      {r.status === 'APPROVED' && r.pickup_otp && (
+                        <span className="text-[11px] font-mono bg-amber-50 text-amber-900 border border-amber-200 px-2 py-0.5 rounded font-bold">
+                          OTP: {r.pickup_otp}
+                        </span>
                       )}
                     </td>
                   </tr>

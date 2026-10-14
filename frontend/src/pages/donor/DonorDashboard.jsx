@@ -41,6 +41,21 @@ export default function DonorDashboard() {
     }
   };
 
+  const [approvingId, setApprovingId] = useState(null);
+
+  const handleApproveRequest = async (id) => {
+    setApprovingId(id);
+    try {
+      const res = await api.approveRequest(id);
+      alert(`Request approved! Pickup task created with OTP: ${res.data.pickup_otp}. A volunteer can now accept this task in the Volunteer Hub.`);
+      loadData();
+    } catch (err) {
+      alert(err.response?.data?.error || "Failed to approve request.");
+    } finally {
+      setApprovingId(null);
+    }
+  };
+
   const activeDonations = myDonations.filter((d) => d.status === 'AVAILABLE' && !d.is_expired);
   const pendingRequests = incomingRequests.filter((r) => r.status === 'PENDING');
   const approvedRequests = incomingRequests.filter((r) => r.status === 'APPROVED');
@@ -114,6 +129,57 @@ export default function DonorDashboard() {
           color="purple"
         />
       </div>
+
+      {/* Pending NGO Requests Awaiting Approval */}
+      {pendingRequests.length > 0 && (
+        <div className="bg-emerald-50 border-2 border-emerald-300 rounded-3xl p-6 space-y-4 shadow-xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Inbox className="w-5 h-5 text-emerald-600" />
+              <h2 className="text-base font-bold text-emerald-950">
+                Action Required: Pending NGO Food Requests ({pendingRequests.length})
+              </h2>
+            </div>
+            <Link to="/donor/requests" className="text-xs font-bold text-emerald-700 hover:underline">
+              View Queue →
+            </Link>
+          </div>
+          <p className="text-xs text-emerald-800">
+            NGOs have requested portions of your listed food. <strong>Click 'Approve & Create Volunteer Task'</strong> to generate the volunteer pickup dispatch and your handover OTP!
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
+            {pendingRequests.map((req) => (
+              <div key={req.id} className="bg-white p-5 rounded-2xl border border-emerald-200 shadow-xs flex flex-col justify-between space-y-3">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] uppercase font-bold text-gray-400">Request #{req.id}</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">
+                      Pending Approval
+                    </span>
+                  </div>
+                  <h4 className="font-bold text-sm text-gray-900">{req.donation_title}</h4>
+                  <div className="text-xs text-gray-600 mt-1 space-y-0.5">
+                    <p>Requested: <strong className="text-emerald-700">{req.requested_quantity} {req.donation_unit}</strong></p>
+                    <p>NGO: <strong>{req.receiver_org_name || req.receiver_username}</strong></p>
+                    {req.receiver_phone && <p>Contact: {req.receiver_phone}</p>}
+                    {req.notes && <p className="italic text-gray-500">"{req.notes}"</p>}
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => handleApproveRequest(req.id)}
+                  disabled={approvingId === req.id}
+                  className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm shadow-emerald-600/20"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  {approvingId === req.id ? 'Approving...' : 'Approve & Create Volunteer Task'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Active Pickups & OTP Section (Crucial for workflow Step 5!) */}
       {approvedRequests.length > 0 && (

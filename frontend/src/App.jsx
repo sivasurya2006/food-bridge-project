@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -53,18 +53,43 @@ function InitialEntry() {
   return <Login />;
 }
 
+// Hides Navbar + Footer on login / register screens
+function AppLayout({ children }) {
+  const location = useLocation();
+  const hideChrome = ['/', '/login', '/register'].includes(location.pathname);
+
+  if (hideChrome) {
+    return (
+      <div className="min-h-screen bg-slate-50/50 text-slate-800 antialiased selection:bg-emerald-500 selection:text-white">
+        <main>{children}</main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50/50 text-slate-800 antialiased selection:bg-emerald-500 selection:text-white">
+      {/* Left Sidebar Navigation */}
+      <Navbar />
+
+      {/* Main Content Area on the Right (offset by sidebar width on desktop) */}
+      <div className="md:pl-64 lg:pl-72 flex flex-col min-h-screen">
+        <main className="flex-1">{children}</main>
+        <Footer />
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen flex flex-col bg-slate-50/50 text-slate-800 antialiased selection:bg-emerald-500 selection:text-white">
-          <Navbar />
-          <main className="flex-1">
-            <Routes>
-              {/* Initial Website Entry: Login page for unauthenticated users, Role Dashboard for authenticated */}
-              <Route path="/" element={<InitialEntry />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
+        <AppLayout>
+          <Routes>
+            {/* Initial Website Entry: Login page for unauthenticated users, Role Dashboard for authenticated */}
+            <Route path="/" element={<InitialEntry />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
               
               {/* Public Platform Exploration */}
               <Route path="/home" element={<Home />} />
@@ -152,14 +177,16 @@ export default function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/admin"
+                element={<Navigate to="/admin/dashboard" replace />}
+              />
 
               {/* Fallback */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-          </main>
-          <Footer />
-        </div>
-      </Router>
-    </AuthProvider>
+          </AppLayout>
+        </Router>
+      </AuthProvider>
   );
 }

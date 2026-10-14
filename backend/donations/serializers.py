@@ -25,6 +25,17 @@ class FoodDonationSerializer(serializers.ModelSerializer):
             return f"{obj.donor.first_name} {obj.donor.last_name}".strip()
         return obj.donor.username
 
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        if instance.image:
+            request = self.context.get('request')
+            if request:
+                ret['image'] = request.build_absolute_uri(instance.image.url)
+            else:
+                ret['image'] = f"http://127.0.0.1:8000{instance.image.url}"
+            ret['image_url'] = ret['image']
+        return ret
+
 
 class DonationRequestSerializer(serializers.ModelSerializer):
     donation_title = serializers.ReadOnlyField(source='donation.title')
