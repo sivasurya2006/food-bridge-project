@@ -1,4 +1,4 @@
-from rest_framework import status, permissions
+from rest_framework import status, permissions, parsers
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
@@ -18,7 +18,7 @@ class RegisterView(APIView):
             token, _ = Token.objects.get_or_create(user=user)
             return Response({
                 'token': token.key,
-                'user': UserSerializer(user).data,
+                'user': UserSerializer(user, context={'request': request}).data,
                 'message': 'Registration successful!'
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -34,7 +34,7 @@ class LoginView(APIView):
             token, _ = Token.objects.get_or_create(user=user)
             return Response({
                 'token': token.key,
-                'user': UserSerializer(user).data,
+                'user': UserSerializer(user, context={'request': request}).data,
                 'message': 'Login successful!'
             }, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -53,19 +53,26 @@ class LogoutView(APIView):
 
 class MeView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser, parsers.JSONParser]
 
     def get(self, request):
-        serializer = UserSerializer(request.user)
+        serializer = UserSerializer(request.user, context={'request': request})
         return Response(serializer.data)
 
     def patch(self, request):
         user = request.user
         data = request.data
 
-        # Update basic fields
-        for field in ['phone', 'address', 'city', 'pincode', 'first_name', 'last_name', 'email']:
+        # Update basic user fields
+        for field in ['phone', 'address', 'city', 'pincode', 'first_name', 'last_name', 'email', 'donor_type']:
             if field in data:
                 setattr(user, field, data[field])
+
+        # Handle avatar file upload or removal
+        if 'avatar' in request.FILES:
+            user.avatar = request.FILES['avatar']
+        elif 'avatar' in data and (data['avatar'] == '' or data['avatar'] is None or data['avatar'] == 'null'):
+            user.avatar = None
 
         # Password update if requested
         if 'new_password' in data and data['new_password']:
@@ -101,7 +108,8 @@ class MeView(APIView):
             details=f"Updated profile fields for role {user.role}"
         )
 
-        return Response(UserSerializer(user).data)
+        return Response(UserSerializer(user, context={'request': request}).data)
+
 
 
 class OrganizationVerificationListView(APIView):
@@ -174,6 +182,7 @@ class DemoLoginView(APIView):
         token, _ = Token.objects.get_or_create(user=user)
         return Response({
             'token': token.key,
-            'user': UserSerializer(user).data,
+            'user': UserSerializer(user, context={'request': request}).data,
             'message': f'Logged in as demo {role} ({user.username})!'
         })
+

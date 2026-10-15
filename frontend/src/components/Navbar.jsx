@@ -76,15 +76,28 @@ export default function Navbar() {
 
         {/* User Role Card */}
         {user && (
-          <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 font-black text-sm flex items-center justify-center border border-emerald-300 uppercase shrink-0">
-              {user.username.slice(0, 2)}
+          <Link
+            to="/profile"
+            onClick={closeMobile}
+            className="p-3 bg-slate-50 hover:bg-slate-100/90 border border-slate-200/80 hover:border-emerald-300 rounded-2xl flex items-center gap-3 transition group"
+            title="Click to view & edit your profile"
+          >
+            <div className="w-10 h-10 rounded-xl overflow-hidden bg-emerald-100 text-emerald-800 font-black text-sm flex items-center justify-center border border-emerald-300 shrink-0">
+              {user.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt={user.username}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="uppercase">{user.username.slice(0, 2)}</span>
+              )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-bold text-gray-900 truncate">
+              <p className="text-xs font-bold text-gray-900 truncate group-hover:text-emerald-700 transition-colors">
                 {user.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : user.username}
               </p>
-              <div className="flex items-center gap-1 mt-0.5">
+              <div className="flex items-center gap-1.5 mt-0.5">
                 <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
                   isAdmin ? 'bg-purple-100 text-purple-800 border border-purple-200' :
                   isNGO ? 'bg-blue-100 text-blue-800 border border-blue-200' :
@@ -93,9 +106,12 @@ export default function Navbar() {
                 }`}>
                   {user.role}
                 </span>
+                <span className="text-[10px] text-gray-400 group-hover:text-emerald-600 transition-colors font-medium">
+                  • Profile
+                </span>
               </div>
             </div>
-          </div>
+          </Link>
         )}
 
         {/* Navigation Sections */}
@@ -146,6 +162,10 @@ export default function Navbar() {
                       <Inbox className="w-4 h-4 shrink-0" />
                       <span>Incoming Requests</span>
                     </Link>
+                    <Link to="/profile" onClick={closeMobile} className={navItemClass('/profile')}>
+                      <User className="w-4 h-4 shrink-0" />
+                      <span>My Profile</span>
+                    </Link>
                   </>
                 )}
 
@@ -158,6 +178,10 @@ export default function Navbar() {
                     <Link to="/ngo/requests" onClick={closeMobile} className={navItemClass('/ngo/requests')}>
                       <Inbox className="w-4 h-4 shrink-0" />
                       <span>My Requests</span>
+                    </Link>
+                    <Link to="/profile" onClick={closeMobile} className={navItemClass('/profile')}>
+                      <User className="w-4 h-4 shrink-0" />
+                      <span>My Profile</span>
                     </Link>
                   </>
                 )}
@@ -172,6 +196,10 @@ export default function Navbar() {
                       <Utensils className="w-4 h-4 shrink-0" />
                       <span>Available Tasks</span>
                     </Link>
+                    <Link to="/profile" onClick={closeMobile} className={navItemClass('/profile')}>
+                      <User className="w-4 h-4 shrink-0" />
+                      <span>My Profile</span>
+                    </Link>
                   </>
                 )}
 
@@ -181,7 +209,7 @@ export default function Navbar() {
                       <ShieldCheck className="w-4 h-4 shrink-0" />
                       <span>Admin Center</span>
                     </Link>
-                    <Link to="/admin/profile" onClick={closeMobile} className={navItemClass('/admin/profile')}>
+                    <Link to="/profile" onClick={closeMobile} className={navItemClass('/profile')}>
                       <UserCog className="w-4 h-4 shrink-0" />
                       <span>Admin Profile</span>
                     </Link>
@@ -290,6 +318,17 @@ export default function Navbar() {
 
         {user && (
           <div className="flex items-center gap-2">
+            <Link
+              to="/profile"
+              className="w-8 h-8 rounded-lg overflow-hidden bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center border border-emerald-300"
+              title="My Profile"
+            >
+              {user.avatar ? (
+                <img src={user.avatar} alt={user.username} className="w-full h-full object-cover" />
+              ) : (
+                <span className="uppercase">{user.username.slice(0, 2)}</span>
+              )}
+            </Link>
             <NotificationDropdown />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

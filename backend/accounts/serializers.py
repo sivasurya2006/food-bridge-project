@@ -24,10 +24,21 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name', 'role', 'donor_type',
-            'phone', 'address', 'city', 'pincode',
+            'phone', 'address', 'city', 'pincode', 'avatar',
             'is_active', 'date_joined', 'org_profile', 'volunteer_profile'
         ]
         read_only_fields = ['id', 'date_joined']
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        if instance.avatar:
+            request = self.context.get('request')
+            if request:
+                ret['avatar'] = request.build_absolute_uri(instance.avatar.url)
+            else:
+                ret['avatar'] = f"http://127.0.0.1:8000{instance.avatar.url}"
+        return ret
+
 
 
 class RegisterSerializer(serializers.ModelSerializer):
