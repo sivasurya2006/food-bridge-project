@@ -7,6 +7,33 @@ import {
   Clock, MapPin, AlertCircle, CheckCircle2, Trash2, Sparkles, Check
 } from 'lucide-react';
 
+const SAMPLE_PRESETS = [
+  {
+    name: 'Meals',
+    title: 'South Indian Veg Meals',
+    category: 'Cooked Meals',
+    url: 'https://images.unsplash.com/photo-1610057099443-fde8c4d50f91?auto=format&fit=crop&w=600&q=80',
+  },
+  {
+    name: 'Biryani',
+    title: 'Vegetable Dum Biryani',
+    category: 'Cooked Meals',
+    url: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=600&q=80',
+  },
+  {
+    name: 'Bakery',
+    title: 'Fresh Breads & Buns',
+    category: 'Bakery & Bread',
+    url: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80',
+  },
+  {
+    name: 'Produce',
+    title: 'Fresh Farm Produce',
+    category: 'Fresh Produce',
+    url: 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=600&q=80',
+  },
+];
+
 export default function CreateDonation() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -58,17 +85,57 @@ export default function CreateDonation() {
   };
 
   const processSelectedFile = (file) => {
-    if (!file.type.startsWith('image/')) {
-      setError('Please upload a valid image file (JPG, PNG, JPEG, or WEBP).');
+    if (!file) return;
+
+    // Wide image extension & mime acceptance
+    const validImageExtensions = /\.(jpe?g|png|webp|jfif|avif|gif|bmp|svg|heic|heif|tiff?|ico)$/i;
+    const isImageMime = Boolean(file.type && (file.type.startsWith('image/') || file.type.includes('image')));
+    const isImageExt = validImageExtensions.test(file.name || '');
+    const isGenericMime = file.type === '' || file.type === 'application/octet-stream';
+
+    // Allow if mime is image, or extension matches, or generic mime on an uncorrupted file
+    if (!isImageMime && !isImageExt && !isGenericMime) {
+      setError(`Selected file "${file.name || 'document'}" is not a recognized image. Please select a JPG, PNG, or WEBP photo.`);
       return;
     }
-    if (file.size > 10 * 1024 * 1024) {
-      setError('Image file size must be less than 10MB.');
+    if (file.size > 20 * 1024 * 1024) {
+      setError('Image file size must be less than 20MB.');
       return;
     }
+
     setSelectedFile(file);
-    setPreviewUrl(URL.createObjectURL(file));
+    try {
+      setPreviewUrl(URL.createObjectURL(file));
+      setError('');
+    } catch {
+      const reader = new FileReader();
+      reader.onload = (re) => {
+        setPreviewUrl(re.target.result);
+        setError('');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSelectPreset = async (preset) => {
     setError('');
+    setPreviewUrl(preset.url);
+    if (!formData.title) {
+      setFormData((prev) => ({
+        ...prev,
+        title: preset.title,
+        category: prev.category || preset.category,
+      }));
+    }
+
+    try {
+      const res = await fetch(preset.url);
+      const blob = await res.blob();
+      const file = new File([blob], `${preset.name.toLowerCase()}_sample.jpg`, { type: 'image/jpeg' });
+      setSelectedFile(file);
+    } catch {
+      // Direct URL fallback is handled in handleSubmit
+    }
   };
 
   const handleDragOver = (e) => {
@@ -80,11 +147,28 @@ export default function CreateDonation() {
     setIsDragging(false);
   };
 
-  const handleDrop = (e) => {
+  const handleDrop = async (e) => {
     e.preventDefault();
     setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       processSelectedFile(e.dataTransfer.files[0]);
+      return;
+    }
+
+    // Dragged from a web browser window
+    const html = e.dataTransfer.getData('text/html');
+    if (html) {
+      const match = html.match(/src=["'](https?:\/\/[^"']+)["']/i);
+      if (match && match[1]) {
+        handleSelectPreset({ name: 'Web Image', title: formData.title || 'Surplus Food', category: 'General Food', url: match[1] });
+        return;
+      }
+    }
+
+    const uri = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain');
+    if (uri && (uri.startsWith('http://') || uri.startsWith('https://'))) {
+      handleSelectPreset({ name: 'Web Image', title: formData.title || 'Surplus Food', category: 'General Food', url: uri });
     }
   };
 
@@ -131,6 +215,8 @@ export default function CreateDonation() {
 
       if (selectedFile) {
         submitData.append('image', selectedFile);
+      } else if (previewUrl && previewUrl.startsWith('http')) {
+        submitData.append('image_url', previewUrl);
       } else {
         submitData.append('image_url', 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80');
       }
@@ -138,7 +224,20 @@ export default function CreateDonation() {
       await api.createDonation(submitData);
       navigate('/donor/dashboard');
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to publish donation listing. Please review the form.');
+      const respData = err.response?.data;
+      let errMsg = 'Failed to publish donation listing. Please review the form.';
+      if (typeof respData === 'string') {
+        errMsg = respData;
+      } else if (respData?.error) {
+        errMsg = respData.error;
+      } else if (respData?.detail) {
+        errMsg = respData.detail;
+      } else if (respData && typeof respData === 'object') {
+        const firstKey = Object.keys(respData)[0];
+        const val = respData[firstKey];
+        errMsg = Array.isArray(val) ? `${firstKey}: ${val[0]}` : `${firstKey}: ${val}`;
+      }
+      setError(errMsg);
     } finally {
       setLoading(false);
     }
@@ -203,7 +302,7 @@ export default function CreateDonation() {
                 type="file"
                 ref={fileInputRef}
                 onChange={handleFileChange}
-                accept="image/*"
+                accept="image/*,.jpg,.jpeg,.png,.webp,.jfif,.avif,.gif"
                 className="hidden"
               />
 
@@ -271,6 +370,41 @@ export default function CreateDonation() {
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
+                  </div>
+                </div>
+              )}
+
+              {!previewUrl && (
+                <div className="pt-1">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                      Quick option • Or 1-click select a sample food photo:
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {SAMPLE_PRESETS.map((p) => (
+                      <button
+                        key={p.name}
+                        type="button"
+                        onClick={() => handleSelectPreset(p)}
+                        className="flex items-center gap-2.5 p-2 rounded-2xl bg-white hover:bg-emerald-50 border border-gray-200 hover:border-emerald-300 text-left transition group shadow-2xs cursor-pointer"
+                      >
+                        <img
+                          src={p.url}
+                          alt={p.name}
+                          className="w-10 h-10 rounded-xl object-cover shrink-0 border border-gray-100"
+                        />
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-gray-800 group-hover:text-emerald-700 truncate">
+                            {p.name}
+                          </p>
+                          <p className="text-[10px] text-gray-400 truncate">
+                            {p.title}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
                   </div>
                 </div>
               )}
