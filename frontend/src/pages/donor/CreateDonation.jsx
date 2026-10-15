@@ -214,7 +214,15 @@ export default function CreateDonation() {
       submitData.append('allergen_information', formData.allergen_information);
 
       if (selectedFile) {
-        submitData.append('image', selectedFile);
+        let fileToUpload = selectedFile;
+        // Auto-fix .img extension to .jpg so Django validator accepts it
+        if (/\.img$/i.test(selectedFile.name)) {
+          const newName = selectedFile.name.replace(/\.img$/i, '.jpg');
+          fileToUpload = new File([selectedFile], newName, {
+            type: selectedFile.type && selectedFile.type.startsWith('image/') ? selectedFile.type : 'image/jpeg',
+          });
+        }
+        submitData.append('image', fileToUpload);
       } else if (previewUrl && previewUrl.startsWith('http')) {
         submitData.append('image_url', previewUrl);
       } else {

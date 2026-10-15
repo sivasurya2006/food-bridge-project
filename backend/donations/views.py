@@ -50,6 +50,12 @@ class DonationListCreateView(APIView):
         if request.user.role not in ['DONOR', 'ADMIN']:
             return Response({'error': 'Only registered donors can list food donations.'}, status=status.HTTP_403_FORBIDDEN)
 
+        # Sanitize uploaded image filename if ending with .img
+        if 'image' in request.FILES:
+            img_file = request.FILES['image']
+            if img_file.name and img_file.name.lower().endswith('.img'):
+                img_file.name = img_file.name[:-4] + '.jpg'
+
         serializer = FoodDonationSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             donation = serializer.save(donor=request.user)
