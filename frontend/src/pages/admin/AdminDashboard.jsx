@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { api } from '../../api/client';
 import StatsCard from '../../components/StatsCard';
 import {
   ShieldCheck, Building2, Utensils, Truck, Users,
-  CheckCircle2, XCircle, Clock, AlertTriangle, RefreshCw, UserCog
+  CheckCircle2, XCircle, Clock, AlertTriangle, RefreshCw, UserCog, Inbox
 } from 'lucide-react';
 
 export default function AdminDashboard() {
+  const location = useLocation();
   const [stats, setStats] = useState(null);
   const [organizations, setOrganizations] = useState([]);
   const [requests, setRequests] = useState([]);
@@ -35,6 +36,17 @@ export default function AdminDashboard() {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (location.hash) {
+      const el = document.querySelector(location.hash);
+      if (el) {
+        setTimeout(() => {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 150);
+      }
+    }
+  }, [location.hash, loading]);
 
   const handleApproveRequest = async (id) => {
     setApprovingReqId(id);
@@ -125,7 +137,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Organisation Verification Center */}
-      <div className="bg-white rounded-3xl border border-gray-100 p-6 space-y-4 shadow-xs">
+      <div id="organizations" className="bg-white rounded-3xl border border-gray-100 p-6 space-y-4 shadow-xs scroll-mt-8">
         <div className="flex items-center justify-between pb-2 border-b border-gray-100">
           <div>
             <h2 className="text-lg font-bold text-gray-900">Registered Receiving Organisations</h2>
@@ -204,7 +216,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Platform Food Requests & Dispatch Queue */}
-      <div className="bg-white rounded-3xl border border-gray-100 p-6 space-y-4 shadow-xs">
+      <div id="requests" className="bg-white rounded-3xl border border-gray-100 p-6 space-y-4 shadow-xs scroll-mt-8">
         <div className="flex items-center justify-between pb-2 border-b border-gray-100">
           <div>
             <h2 className="text-lg font-bold text-gray-900">Food Donation Requests & Volunteer Dispatch</h2>

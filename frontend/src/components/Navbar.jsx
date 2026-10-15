@@ -32,7 +32,12 @@ export default function Navbar() {
     }
   };
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => {
+    if (path.includes('#')) {
+      return (location.pathname + location.hash) === path;
+    }
+    return location.pathname === path && !location.hash;
+  };
 
   const closeMobile = () => setMobileMenuOpen(false);
 
@@ -40,8 +45,12 @@ export default function Navbar() {
     flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all
     ${
       isActive(path)
-        ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/30 font-bold'
-        : 'text-gray-600 hover:text-emerald-700 hover:bg-emerald-50/70'
+        ? (isAdmin
+            ? 'bg-purple-700 text-white shadow-sm shadow-purple-700/30 font-bold'
+            : 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/30 font-bold')
+        : (isAdmin
+            ? 'text-gray-600 hover:text-purple-800 hover:bg-purple-50/70'
+            : 'text-gray-600 hover:text-emerald-700 hover:bg-emerald-50/70')
     }
   `;
 
@@ -52,7 +61,7 @@ export default function Navbar() {
       <div className="space-y-6">
         {/* Brand Logo */}
         <Link
-          to={user ? '/home' : '/login'}
+          to={user ? (isAdmin ? '/admin/dashboard' : '/home') : '/login'}
           onClick={closeMobile}
           className="flex items-center gap-3 group px-1"
         >
@@ -79,10 +88,10 @@ export default function Navbar() {
           <Link
             to="/profile"
             onClick={closeMobile}
-            className="p-3 bg-slate-50 hover:bg-slate-100/90 border border-slate-200/80 hover:border-emerald-300 rounded-2xl flex items-center gap-3 transition group"
+            className={`p-3 bg-slate-50 hover:bg-slate-100/90 border border-slate-200/80 ${isAdmin ? 'hover:border-purple-300' : 'hover:border-emerald-300'} rounded-2xl flex items-center gap-3 transition group`}
             title="Click to view & edit your profile"
           >
-            <div className="w-10 h-10 rounded-xl overflow-hidden bg-emerald-100 text-emerald-800 font-black text-sm flex items-center justify-center border border-emerald-300 shrink-0">
+            <div className={`w-10 h-10 rounded-xl overflow-hidden ${isAdmin ? 'bg-purple-100 text-purple-800 border-purple-300' : 'bg-emerald-100 text-emerald-800 border-emerald-300'} font-black text-sm flex items-center justify-center border shrink-0`}>
               {user.avatar ? (
                 <img
                   src={user.avatar}
@@ -94,7 +103,7 @@ export default function Navbar() {
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-bold text-gray-900 truncate group-hover:text-emerald-700 transition-colors">
+              <p className={`text-xs font-bold text-gray-900 truncate ${isAdmin ? 'group-hover:text-purple-700' : 'group-hover:text-emerald-700'} transition-colors`}>
                 {user.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : user.username}
               </p>
               <div className="flex items-center gap-1.5 mt-0.5">
@@ -106,7 +115,7 @@ export default function Navbar() {
                 }`}>
                   {user.role}
                 </span>
-                <span className="text-[10px] text-gray-400 group-hover:text-emerald-600 transition-colors font-medium">
+                <span className={`text-[10px] text-gray-400 ${isAdmin ? 'group-hover:text-purple-600' : 'group-hover:text-emerald-600'} transition-colors font-medium`}>
                   • Profile
                 </span>
               </div>
@@ -116,107 +125,128 @@ export default function Navbar() {
 
         {/* Navigation Sections */}
         <div className="space-y-4">
-          {/* Main Public Exploration */}
-          <div>
-            <div className="px-3 mb-1.5 text-[10px] font-bold tracking-wider text-gray-400 uppercase">
-              Main Menu
-            </div>
-            <nav className="space-y-1">
-              <Link to="/home" onClick={closeMobile} className={navItemClass('/home')}>
-                <Home className="w-4 h-4 shrink-0" />
-                <span>Home</span>
-              </Link>
-              <Link to="/donations" onClick={closeMobile} className={navItemClass('/donations')}>
-                <Utensils className="w-4 h-4 shrink-0" />
-                <span>Explore Food</span>
-              </Link>
-              <Link to="/how-it-works" onClick={closeMobile} className={navItemClass('/how-it-works')}>
-                <Info className="w-4 h-4 shrink-0" />
-                <span>How It Works</span>
-              </Link>
-              <Link to="/safety" onClick={closeMobile} className={navItemClass('/safety')}>
-                <Shield className="w-4 h-4 shrink-0" />
-                <span>Safety Guidelines</span>
-              </Link>
-            </nav>
-          </div>
-
-          {/* Role-Specific Portal Links */}
-          {user && (
-            <div className="pt-2 border-t border-gray-100">
-              <div className="px-3 mb-1.5 text-[10px] font-bold tracking-wider text-gray-400 uppercase">
-                {user.role} Workspace
+          {isAdmin ? (
+            /* Dedicated Admin Navigation: ONLY what Admin needs */
+            <div>
+              <div className="px-3 mb-1.5 text-[10px] font-bold tracking-wider text-purple-700 uppercase">
+                Admin Control
               </div>
               <nav className="space-y-1">
-                {isDonor && (
-                  <>
-                    <Link to="/donor/dashboard" onClick={closeMobile} className={navItemClass('/donor/dashboard')}>
-                      <LayoutDashboard className="w-4 h-4 shrink-0" />
-                      <span>Donor Portal</span>
-                    </Link>
-                    <Link to="/donor/create" onClick={closeMobile} className={navItemClass('/donor/create')}>
-                      <PlusCircle className="w-4 h-4 shrink-0" />
-                      <span>+ List Food</span>
-                    </Link>
-                    <Link to="/donor/requests" onClick={closeMobile} className={navItemClass('/donor/requests')}>
-                      <Inbox className="w-4 h-4 shrink-0" />
-                      <span>Incoming Requests</span>
-                    </Link>
-                    <Link to="/profile" onClick={closeMobile} className={navItemClass('/profile')}>
-                      <User className="w-4 h-4 shrink-0" />
-                      <span>My Profile</span>
-                    </Link>
-                  </>
-                )}
-
-                {isNGO && (
-                  <>
-                    <Link to="/ngo/dashboard" onClick={closeMobile} className={navItemClass('/ngo/dashboard')}>
-                      <Building2 className="w-4 h-4 shrink-0" />
-                      <span>NGO Dashboard</span>
-                    </Link>
-                    <Link to="/ngo/requests" onClick={closeMobile} className={navItemClass('/ngo/requests')}>
-                      <Inbox className="w-4 h-4 shrink-0" />
-                      <span>My Requests</span>
-                    </Link>
-                    <Link to="/profile" onClick={closeMobile} className={navItemClass('/profile')}>
-                      <User className="w-4 h-4 shrink-0" />
-                      <span>My Profile</span>
-                    </Link>
-                  </>
-                )}
-
-                {isVolunteer && (
-                  <>
-                    <Link to="/volunteer/dashboard" onClick={closeMobile} className={navItemClass('/volunteer/dashboard')}>
-                      <Truck className="w-4 h-4 shrink-0" />
-                      <span>Volunteer Hub</span>
-                    </Link>
-                    <Link to="/volunteer/tasks" onClick={closeMobile} className={navItemClass('/volunteer/tasks')}>
-                      <Utensils className="w-4 h-4 shrink-0" />
-                      <span>Available Tasks</span>
-                    </Link>
-                    <Link to="/profile" onClick={closeMobile} className={navItemClass('/profile')}>
-                      <User className="w-4 h-4 shrink-0" />
-                      <span>My Profile</span>
-                    </Link>
-                  </>
-                )}
-
-                {isAdmin && (
-                  <>
-                    <Link to="/admin/dashboard" onClick={closeMobile} className={navItemClass('/admin/dashboard')}>
-                      <ShieldCheck className="w-4 h-4 shrink-0" />
-                      <span>Admin Center</span>
-                    </Link>
-                    <Link to="/profile" onClick={closeMobile} className={navItemClass('/profile')}>
-                      <UserCog className="w-4 h-4 shrink-0" />
-                      <span>Admin Profile</span>
-                    </Link>
-                  </>
-                )}
+                <Link to="/admin/dashboard" onClick={closeMobile} className={navItemClass('/admin/dashboard')}>
+                  <ShieldCheck className="w-4 h-4 shrink-0" />
+                  <span>Admin Dashboard</span>
+                </Link>
+                <Link to="/admin/dashboard#organizations" onClick={closeMobile} className={navItemClass('/admin/dashboard#organizations')}>
+                  <Building2 className="w-4 h-4 shrink-0" />
+                  <span>NGO Verifications</span>
+                </Link>
+                <Link to="/admin/dashboard#requests" onClick={closeMobile} className={navItemClass('/admin/dashboard#requests')}>
+                  <Inbox className="w-4 h-4 shrink-0" />
+                  <span>Requests &amp; Dispatch</span>
+                </Link>
+                <Link to="/donations" onClick={closeMobile} className={navItemClass('/donations')}>
+                  <Utensils className="w-4 h-4 shrink-0" />
+                  <span>All Food Donations</span>
+                </Link>
+                <Link to="/profile" onClick={closeMobile} className={navItemClass('/profile')}>
+                  <UserCog className="w-4 h-4 shrink-0" />
+                  <span>Admin Profile</span>
+                </Link>
               </nav>
             </div>
+          ) : (
+            /* Standard Navigation for Public / Non-Admin Users */
+            <>
+              {/* Main Public Exploration */}
+              <div>
+                <div className="px-3 mb-1.5 text-[10px] font-bold tracking-wider text-gray-400 uppercase">
+                  Main Menu
+                </div>
+                <nav className="space-y-1">
+                  <Link to="/home" onClick={closeMobile} className={navItemClass('/home')}>
+                    <Home className="w-4 h-4 shrink-0" />
+                    <span>Home</span>
+                  </Link>
+                  <Link to="/donations" onClick={closeMobile} className={navItemClass('/donations')}>
+                    <Utensils className="w-4 h-4 shrink-0" />
+                    <span>Explore Food</span>
+                  </Link>
+                  <Link to="/how-it-works" onClick={closeMobile} className={navItemClass('/how-it-works')}>
+                    <Info className="w-4 h-4 shrink-0" />
+                    <span>How It Works</span>
+                  </Link>
+                  <Link to="/safety" onClick={closeMobile} className={navItemClass('/safety')}>
+                    <Shield className="w-4 h-4 shrink-0" />
+                    <span>Safety Guidelines</span>
+                  </Link>
+                </nav>
+              </div>
+
+              {/* Role-Specific Portal Links */}
+              {user && (
+                <div className="pt-2 border-t border-gray-100">
+                  <div className="px-3 mb-1.5 text-[10px] font-bold tracking-wider text-gray-400 uppercase">
+                    {user.role} Workspace
+                  </div>
+                  <nav className="space-y-1">
+                    {isDonor && (
+                      <>
+                        <Link to="/donor/dashboard" onClick={closeMobile} className={navItemClass('/donor/dashboard')}>
+                          <LayoutDashboard className="w-4 h-4 shrink-0" />
+                          <span>Donor Portal</span>
+                        </Link>
+                        <Link to="/donor/create" onClick={closeMobile} className={navItemClass('/donor/create')}>
+                          <PlusCircle className="w-4 h-4 shrink-0" />
+                          <span>+ List Food</span>
+                        </Link>
+                        <Link to="/donor/requests" onClick={closeMobile} className={navItemClass('/donor/requests')}>
+                          <Inbox className="w-4 h-4 shrink-0" />
+                          <span>Incoming Requests</span>
+                        </Link>
+                        <Link to="/profile" onClick={closeMobile} className={navItemClass('/profile')}>
+                          <User className="w-4 h-4 shrink-0" />
+                          <span>My Profile</span>
+                        </Link>
+                      </>
+                    )}
+
+                    {isNGO && (
+                      <>
+                        <Link to="/ngo/dashboard" onClick={closeMobile} className={navItemClass('/ngo/dashboard')}>
+                          <Building2 className="w-4 h-4 shrink-0" />
+                          <span>NGO Dashboard</span>
+                        </Link>
+                        <Link to="/ngo/requests" onClick={closeMobile} className={navItemClass('/ngo/requests')}>
+                          <Inbox className="w-4 h-4 shrink-0" />
+                          <span>My Requests</span>
+                        </Link>
+                        <Link to="/profile" onClick={closeMobile} className={navItemClass('/profile')}>
+                          <User className="w-4 h-4 shrink-0" />
+                          <span>My Profile</span>
+                        </Link>
+                      </>
+                    )}
+
+                    {isVolunteer && (
+                      <>
+                        <Link to="/volunteer/dashboard" onClick={closeMobile} className={navItemClass('/volunteer/dashboard')}>
+                          <Truck className="w-4 h-4 shrink-0" />
+                          <span>Volunteer Hub</span>
+                        </Link>
+                        <Link to="/volunteer/tasks" onClick={closeMobile} className={navItemClass('/volunteer/tasks')}>
+                          <Utensils className="w-4 h-4 shrink-0" />
+                          <span>Available Tasks</span>
+                        </Link>
+                        <Link to="/profile" onClick={closeMobile} className={navItemClass('/profile')}>
+                          <User className="w-4 h-4 shrink-0" />
+                          <span>My Profile</span>
+                        </Link>
+                      </>
+                    )}
+                  </nav>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -307,7 +337,7 @@ export default function Navbar() {
           MOBILE: Top Header Bar (when on mobile viewports)
       ══════════════════════════════════════════════════════════════ */}
       <header className="md:hidden sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200 px-4 h-16 flex items-center justify-between">
-        <Link to={user ? '/home' : '/login'} className="flex items-center gap-2">
+        <Link to={user ? (isAdmin ? '/admin/dashboard' : '/home') : '/login'} className="flex items-center gap-2">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shadow-sm">
             <HeartHandshake className="w-5 h-5" />
           </div>
