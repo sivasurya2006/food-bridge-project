@@ -131,10 +131,24 @@ class DemoLoginView(APIView):
 
     def post(self, request):
         role = request.data.get('role', 'DONOR').upper()
-        # Find first active user with role
-        user = User.objects.filter(role=role, is_active=True).first()
+        target_username = request.data.get('username')
+
+        if target_username:
+            user = User.objects.filter(username=target_username, is_active=True).first()
+        else:
+            # If role is DONOR, prefer the donor with the most recent donation (e.g. sakthivel)
+            if role == 'DONOR':
+                user = User.objects.filter(role='DONOR', is_active=True, donations__isnull=False).order_by('-donations__created_at').first()
+                if not user:
+                    user = User.objects.filter(role='DONOR', is_active=True).order_by('-id').first()
+            elif role == 'NGO':
+                user = User.objects.filter(role='NGO', is_active=True).order_by('-id').first()
+            elif role == 'VOLUNTEER':
+                user = User.objects.filter(role='VOLUNTEER', is_active=True).order_by('-id').first()
+            else:
+                user = User.objects.filter(role=role, is_active=True).first()
+
         if not user:
-            # Fallback to any user
             user = User.objects.first()
 
         if not user:
@@ -144,5 +158,5 @@ class DemoLoginView(APIView):
         return Response({
             'token': token.key,
             'user': UserSerializer(user).data,
-            'message': f'Logged in as demo {role}!'
+            'message': f'Logged in as demo {role} ({user.username})!'
         })

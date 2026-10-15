@@ -212,21 +212,21 @@ export default function Navbar() {
                   onClick={() => handleDemoSwitch('DONOR')}
                   className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg flex items-center justify-between"
                 >
-                  <span>🏨 Donor Hotel</span>
+                  <span>🏨 Donor (sakthivel)</span>
                   {isDonor && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
                 </button>
                 <button
                   onClick={() => handleDemoSwitch('NGO')}
                   className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg flex items-center justify-between"
                 >
-                  <span>🤝 Hope NGO</span>
+                  <span>🤝 Hope NGO (rajagurushri)</span>
                   {isNGO && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
                 </button>
                 <button
                   onClick={() => handleDemoSwitch('VOLUNTEER')}
                   className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg flex items-center justify-between"
                 >
-                  <span>🚴 Volunteer Alex</span>
+                  <span>🚴 Volunteer (prajin)</span>
                   {isVolunteer && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
                 </button>
                 <button
