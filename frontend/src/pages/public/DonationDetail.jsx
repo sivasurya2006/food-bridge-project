@@ -11,7 +11,7 @@ import {
 export default function DonationDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, isNGO } = useAuth();
+  const { user, isNGO, isDonor, isAdmin, isVolunteer } = useAuth();
   const [donation, setDonation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showRequestModal, setShowRequestModal] = useState(false);
@@ -64,8 +64,11 @@ export default function DonationDetail() {
     );
   }
 
-  const isOwner = user?.id === donation.donor;
+  const isOwner = Boolean(
+    user && (user.id === donation.donor || user.username === donation.donor_username)
+  );
   const isAvailable = donation.status === 'AVAILABLE' && !donation.is_expired && donation.available_quantity > 0;
+  const canRequest = isAvailable && !isOwner && (isNGO || isAdmin);
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -173,23 +176,74 @@ export default function DonationDetail() {
           </div>
 
           {/* Action Row */}
-          <div className="pt-2 flex flex-wrap gap-3">
-            {isAvailable && (
+          <div className="pt-2">
+            {isOwner ? (
+              <div className="space-y-3 w-full">
+                <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between text-xs text-emerald-900">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="font-semibold">This is your surplus food donation listing ({donation.donor_username}).</span>
+                  </div>
+                  <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                    Your Listing
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <Link
+                    to="/donor/incoming-requests"
+                    className="flex-1 py-3 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl transition flex items-center justify-center gap-2 shadow-xs"
+                  >
+                    <Package className="w-4 h-4" /> View Incoming NGO Requests
+                  </Link>
+
+                  {donation.status === 'AVAILABLE' && (
+                    <button
+                      onClick={handleCancel}
+                      className="py-3 px-5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl transition border border-rose-200 cursor-pointer"
+                    >
+                      Cancel Listing
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : isDonor ? (
+              <div className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <p>
+                  You are viewing this listing in <strong>Donor Mode</strong>. Only registered charities &amp; NGOs can request surplus food.
+                </p>
+                <Link
+                  to="/donor/create-donation"
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shrink-0 transition"
+                >
+                  + Donate Food
+                </Link>
+              </div>
+            ) : canRequest ? (
               <button
                 onClick={() => setShowRequestModal(true)}
-                className="flex-1 py-3 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl transition shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2"
+                className="w-full py-3.5 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl transition shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Utensils className="w-4 h-4" /> Request This Food
               </button>
-            )}
-
-            {isOwner && (
-              <button
-                onClick={handleCancel}
-                className="py-3 px-5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl transition border border-rose-200"
+            ) : !user ? (
+              <Link
+                to="/login"
+                className="w-full py-3.5 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl transition shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2"
               >
-                Cancel Listing
-              </button>
+                <Utensils className="w-4 h-4" /> Sign In as NGO to Request Food
+              </Link>
+            ) : isVolunteer ? (
+              <div className="w-full p-3.5 bg-blue-50 border border-blue-200 rounded-2xl text-xs text-blue-900 flex items-center justify-between">
+                <span>Volunteers accept pickup &amp; distribution tasks after NGOs submit requests.</span>
+                <Link to="/volunteer/available-tasks" className="font-bold text-blue-700 hover:underline shrink-0 ml-3">
+                  View Tasks →
+                </Link>
+              </div>
+            ) : (
+              <div className="w-full py-3 px-6 bg-gray-100 text-gray-500 font-bold text-xs rounded-xl text-center">
+                {donation.is_expired ? 'Listing deadline has passed' : 'Listing is currently unavailable'}
+              </div>
             )}
           </div>
         </div>

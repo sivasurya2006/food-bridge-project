@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Clock, Utensils, AlertCircle, CheckCircle, Package } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const categoryImages = {
   'Cooked Meals': 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80',
@@ -14,6 +15,7 @@ const categoryImages = {
 };
 
 export default function DonationCard({ donation, onRequestClick, isNGO }) {
+  const { user, isNGO: authIsNGO, isAdmin } = useAuth();
   const imageUrl = donation.image_url || donation.image || categoryImages[donation.category] || categoryImages['Cooked Meals'];
 
   const deadline = new Date(donation.pickup_deadline);
@@ -21,7 +23,11 @@ export default function DonationCard({ donation, onRequestClick, isNGO }) {
   const diffHours = Math.round((deadline - now) / (1000 * 60 * 60));
   const isExpired = donation.is_expired || diffHours < 0;
 
+  const isOwner = Boolean(
+    user && (user.id === donation.donor || user.username === donation.donor_username)
+  );
   const isAvailable = donation.status === 'AVAILABLE' && !isExpired && donation.available_quantity > 0;
+  const allowRequest = isAvailable && !isOwner && (isNGO || authIsNGO || isAdmin);
 
   return (
     <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-xs hover:shadow-md transition-all flex flex-col group">
@@ -114,19 +120,35 @@ export default function DonationCard({ donation, onRequestClick, isNGO }) {
 
         {/* Action Button */}
         <div className="mt-4 pt-3 flex gap-2">
-          <Link
-            to={`/donations/${donation.id}`}
-            className="flex-1 py-2 text-center text-xs font-semibold text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-xl transition"
-          >
-            Details
-          </Link>
-          {isAvailable && (
-            <button
-              onClick={() => onRequestClick(donation)}
-              className="flex-1 py-2 text-center text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition shadow-xs"
+          {isOwner ? (
+            <Link
+              to={`/donations/${donation.id}`}
+              className="flex-1 py-2 text-center text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition border border-emerald-200"
             >
-              Request Food
-            </button>
+              Your Listing • View Details
+            </Link>
+          ) : allowRequest ? (
+            <>
+              <Link
+                to={`/donations/${donation.id}`}
+                className="flex-1 py-2 text-center text-xs font-semibold text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-xl transition"
+              >
+                Details
+              </Link>
+              <button
+                onClick={() => onRequestClick(donation)}
+                className="flex-1 py-2 text-center text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition shadow-xs cursor-pointer"
+              >
+                Request Food
+              </button>
+            </>
+          ) : (
+            <Link
+              to={`/donations/${donation.id}`}
+              className="w-full py-2 text-center text-xs font-semibold text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-xl transition"
+            >
+              View Details
+            </Link>
           )}
         </div>
       </div>

@@ -171,6 +171,9 @@ class CreateDonationRequestView(APIView):
         if donation.status != 'AVAILABLE' or donation.is_expired:
             return Response({'error': 'This donation is no longer available for requests.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        if donation.donor == request.user:
+            return Response({'error': 'You cannot request your own food donation listing.'}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             requested_qty = int(request.data.get('requested_quantity', 1))
         except (ValueError, TypeError):
