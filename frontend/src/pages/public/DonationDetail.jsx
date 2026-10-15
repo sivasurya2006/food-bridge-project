@@ -5,7 +5,8 @@ import { useAuth } from '../../context/AuthContext';
 import RequestFoodModal from '../../components/RequestFoodModal';
 import {
   MapPin, Clock, Utensils, AlertTriangle, ShieldCheck,
-  Building2, Phone, Calendar, ArrowLeft, CheckCircle2, Package
+  Building2, Phone, Calendar, ArrowLeft, CheckCircle2, Package,
+  Inbox, KeyRound
 } from 'lucide-react';
 
 export default function DonationDetail() {
@@ -16,6 +17,7 @@ export default function DonationDetail() {
   const [loading, setLoading] = useState(true);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [error, setError] = useState(null);
+  const [approvingId, setApprovingId] = useState(null);
 
   const fetchDetail = async () => {
     try {
@@ -39,6 +41,19 @@ export default function DonationDetail() {
       navigate('/donor/dashboard');
     } catch (err) {
       alert("Failed to cancel donation.");
+    }
+  };
+
+  const handleApproveRequest = async (reqId) => {
+    setApprovingId(reqId);
+    try {
+      const res = await api.approveRequest(reqId);
+      alert(`Request approved! Pickup task created for volunteers with OTP: ${res.data.pickup_otp}. A volunteer can now accept this task in the Volunteer Hub.`);
+      fetchDetail();
+    } catch (err) {
+      alert(err.response?.data?.error || "Failed to approve request.");
+    } finally {
+      setApprovingId(null);
     }
   };
 
@@ -191,7 +206,7 @@ export default function DonationDetail() {
 
                 <div className="flex flex-wrap gap-3">
                   <Link
-                    to="/donor/incoming-requests"
+                    to="/donor/requests"
                     className="flex-1 py-3 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl transition flex items-center justify-center gap-2 shadow-xs"
                   >
                     <Package className="w-4 h-4" /> View Incoming NGO Requests
@@ -248,6 +263,76 @@ export default function DonationDetail() {
           </div>
         </div>
       </div>
+
+      {/* If owner, show Incoming Requests for this specific listing right here! */}
+      {isOwner && donation.requests && donation.requests.length > 0 && (
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-emerald-200 shadow-sm space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-4">
+            <div className="flex items-center gap-2">
+              <Inbox className="w-5 h-5 text-emerald-600" />
+              <h3 className="font-bold text-base sm:text-lg text-gray-900">
+                Incoming NGO Requests for this Listing ({donation.requests.length})
+              </h3>
+            </div>
+            <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full self-start sm:self-auto">
+              {donation.requests.filter((r) => r.status === 'PENDING').length} Pending Approval
+            </span>
+          </div>
+
+          <div className="space-y-3">
+            {donation.requests.map((r) => (
+              <div
+                key={r.id}
+                className="p-5 rounded-2xl bg-gray-50 border border-gray-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-gray-900">
+                      Request #{r.id} by {r.receiver_org_name || r.receiver_username}
+                    </span>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        r.status === 'APPROVED'
+                          ? 'bg-blue-100 text-blue-800'
+                          : r.status === 'PENDING'
+                          ? 'bg-amber-100 text-amber-800'
+                          : 'bg-emerald-100 text-emerald-800'
+                      }`}
+                    >
+                      {r.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-emerald-700 font-bold">
+                    Requested Quantity: {r.requested_quantity} {donation.unit}
+                  </p>
+                  {r.notes && (
+                    <p className="text-xs text-gray-500 italic">"{r.notes}"</p>
+                  )}
+                  {r.pickup_otp && (
+                    <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-xl inline-flex items-center gap-2">
+                      <KeyRound className="w-4 h-4 text-amber-700" />
+                      <span className="text-xs font-bold text-amber-900">
+                        Pickup Verification OTP: <strong className="font-mono text-sm tracking-wider">{r.pickup_otp}</strong>
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {r.status === 'PENDING' && (
+                  <button
+                    onClick={() => handleApproveRequest(r.id)}
+                    disabled={approvingId === r.id}
+                    className="w-full md:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-2 cursor-pointer shrink-0"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    {approvingId === r.id ? 'Approving...' : 'Approve & Dispatch Volunteer'}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {showRequestModal && (
         <RequestFoodModal

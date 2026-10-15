@@ -123,6 +123,14 @@ export default function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/donor/incoming-requests"
+                element={
+                  <ProtectedRoute allowedRoles={['DONOR', 'ADMIN']}>
+                    <IncomingRequests />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Protected NGO Routes */}
               <Route

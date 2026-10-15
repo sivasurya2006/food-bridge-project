@@ -80,7 +80,10 @@ class DonationDetailView(APIView):
             return Response({'error': 'Donation not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = FoodDonationSerializer(donation, context={'request': request})
-        return Response(serializer.data)
+        data = serializer.data
+        if request.user.is_authenticated and (donation.donor == request.user or request.user.role == 'ADMIN'):
+            data['requests'] = DonationRequestSerializer(donation.requests.all().order_by('-created_at'), many=True, context={'request': request}).data
+        return Response(data)
 
     def patch(self, request, pk):
         try:
@@ -162,52 +165,58 @@ class CreateDonationRequestView(APIView):
         if request.user.role not in ['NGO', 'ADMIN']:
             return Response({'error': 'Only registered NGOs can submit food donation requests.'}, status=status.HTTP_403_FORBIDDEN)
 
-        try:
-            donation = FoodDonation.objects.get(pk=pk)
+        with transaction.atomic():
+            try:
+                donation = FoodDonation.objects.select_for_update().get(pk=pk)
+                donation.update_status()
+            except FoodDonation.DoesNotExist:
+                return Response({'error': 'Donation listing not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+            if donation.status != 'AVAILABLE' or donation.is_expired:
+                return Response({'error': 'This donation is no longer available for requests.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if donation.donor == request.user:
+                return Response({'error': 'You cannot request your own food donation listing.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            try:
+                requested_qty = int(request.data.get('requested_quantity', 1))
+            except (ValueError, TypeError):
+                return Response({'error': 'Invalid requested quantity.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if requested_qty <= 0:
+                return Response({'error': 'Requested quantity must be greater than zero.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if requested_qty > donation.available_quantity:
+                return Response({
+                    'error': f"Requested quantity ({requested_qty}) exceeds currently available amount ({donation.available_quantity} {donation.unit})."
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            notes = request.data.get('notes', '')
+
+            # Create request
+            req = DonationRequest.objects.create(
+                donation=donation,
+                receiver=request.user,
+                requested_quantity=requested_qty,
+                notes=notes,
+                status='PENDING'
+            )
+
+            # Hold/reserve the food quantity immediately so available quantity updates right away
+            donation.reserved_quantity += requested_qty
+            donation.save()
             donation.update_status()
-        except FoodDonation.DoesNotExist:
-            return Response({'error': 'Donation listing not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        if donation.status != 'AVAILABLE' or donation.is_expired:
-            return Response({'error': 'This donation is no longer available for requests.'}, status=status.HTTP_400_BAD_REQUEST)
+            # Notify donor
+            org_name = request.user.org_profile.organisation_name if hasattr(request.user, 'org_profile') else request.user.username
+            Notification.objects.create(
+                user=donation.donor,
+                title='New Food Donation Request',
+                message=f"{org_name} has requested {requested_qty} {donation.unit} of '{donation.title}'.",
+                notification_type='request'
+            )
 
-        if donation.donor == request.user:
-            return Response({'error': 'You cannot request your own food donation listing.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            requested_qty = int(request.data.get('requested_quantity', 1))
-        except (ValueError, TypeError):
-            return Response({'error': 'Invalid requested quantity.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        if requested_qty <= 0:
-            return Response({'error': 'Requested quantity must be greater than zero.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        if requested_qty > donation.available_quantity:
-            return Response({
-                'error': f"Requested quantity ({requested_qty}) exceeds currently available amount ({donation.available_quantity} {donation.unit})."
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        notes = request.data.get('notes', '')
-
-        # Create request
-        req = DonationRequest.objects.create(
-            donation=donation,
-            receiver=request.user,
-            requested_quantity=requested_qty,
-            notes=notes,
-            status='PENDING'
-        )
-
-        # Notify donor
-        org_name = request.user.org_profile.organisation_name if hasattr(request.user, 'org_profile') else request.user.username
-        Notification.objects.create(
-            user=donation.donor,
-            title='New Food Donation Request',
-            message=f"{org_name} has requested {requested_qty} {donation.unit} of '{donation.title}'.",
-            notification_type='request'
-        )
-
-        return Response(DonationRequestSerializer(req, context={'request': request}).data, status=status.HTTP_201_CREATED)
+            return Response(DonationRequestSerializer(req, context={'request': request}).data, status=status.HTTP_201_CREATED)
 
 
 class MyRequestsView(APIView):
@@ -249,14 +258,15 @@ class ApproveRequestView(APIView):
         # Use database transaction with row-level locking
         with transaction.atomic():
             donation = FoodDonation.objects.select_for_update().get(pk=req.donation.id)
-            if donation.available_quantity < req.requested_quantity:
-                return Response({
-                    'error': f'Insufficient available food. Available: {donation.available_quantity}, Requested: {req.requested_quantity}'
-                }, status=status.HTTP_400_BAD_REQUEST)
 
-            donation.reserved_quantity += req.requested_quantity
-            donation.save()
-            donation.update_status()
+            # Ensure quantity is properly reserved (supporting both new hold model and older records)
+            total_active_qty = sum(
+                r.requested_quantity for r in donation.requests.filter(status__in=['PENDING', 'APPROVED', 'COMPLETED'])
+            )
+            if donation.reserved_quantity < total_active_qty:
+                donation.reserved_quantity = min(donation.quantity, total_active_qty)
+                donation.save()
+                donation.update_status()
 
             req.status = 'APPROVED'
             req.reviewed_at = timezone.now()
@@ -310,19 +320,26 @@ class RejectRequestView(APIView):
         if req.status != 'PENDING':
             return Response({'error': f'Cannot reject a request with status {req.status}.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        req.status = 'REJECTED'
-        req.reviewed_at = timezone.now()
-        req.save()
+        with transaction.atomic():
+            req.status = 'REJECTED'
+            req.reviewed_at = timezone.now()
+            req.save()
 
-        Notification.objects.create(
-            user=req.receiver,
-            title='Donation Request Declined',
-            message=f"Your request for '{req.donation.title}' was declined by the donor.",
-            notification_type='warning'
-        )
+            # Release reserved quantity back to available
+            donation = FoodDonation.objects.select_for_update().get(pk=req.donation.id)
+            donation.reserved_quantity = max(0, donation.reserved_quantity - req.requested_quantity)
+            donation.save()
+            donation.update_status()
+
+            Notification.objects.create(
+                user=req.receiver,
+                title='Donation Request Declined',
+                message=f"Your request for '{donation.title}' was declined by the donor.",
+                notification_type='warning'
+            )
 
         return Response({
-            'message': 'Request rejected.',
+            'message': 'Request declined and food portions restored to available.',
             'request': DonationRequestSerializer(req, context={'request': request}).data
         })
 
