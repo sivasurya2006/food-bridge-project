@@ -5,7 +5,7 @@ import NotificationDropdown from './NotificationDropdown';
 import {
   HeartHandshake, PlusCircle, LayoutDashboard, Truck,
   Building2, ShieldCheck, LogOut, Menu, X, Inbox,
-  ChevronDown, CheckCircle2, Sparkles, Home, Utensils, Info, Shield, User
+  ChevronDown, CheckCircle2, Sparkles, Home, Utensils, Info, Shield, User, UserCog
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -176,10 +176,16 @@ export default function Navbar() {
                 )}
 
                 {isAdmin && (
-                  <Link to="/admin/dashboard" onClick={closeMobile} className={navItemClass('/admin/dashboard')}>
-                    <ShieldCheck className="w-4 h-4 shrink-0" />
-                    <span>Admin Center</span>
-                  </Link>
+                  <>
+                    <Link to="/admin/dashboard" onClick={closeMobile} className={navItemClass('/admin/dashboard')}>
+                      <ShieldCheck className="w-4 h-4 shrink-0" />
+                      <span>Admin Center</span>
+                    </Link>
+                    <Link to="/admin/profile" onClick={closeMobile} className={navItemClass('/admin/profile')}>
+                      <UserCog className="w-4 h-4 shrink-0" />
+                      <span>Admin Profile</span>
+                    </Link>
+                  </>
                 )}
               </nav>
             </div>

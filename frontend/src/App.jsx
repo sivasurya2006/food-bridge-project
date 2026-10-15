@@ -27,6 +27,7 @@ import AvailableTasks from './pages/volunteer/AvailableTasks';
 import MyVolunteerTasks from './pages/volunteer/MyVolunteerTasks';
 
 import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminProfile from './pages/admin/AdminProfile';
 
 // Entry router component for '/'
 function InitialEntry() {
@@ -182,6 +183,14 @@ export default function App() {
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN']}>
                     <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/profile"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN']}>
+                    <AdminProfile />
                   </ProtectedRoute>
                 }
               />

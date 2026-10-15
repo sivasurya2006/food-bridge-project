@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../../api/client';
 import StatsCard from '../../components/StatsCard';
 import {
   ShieldCheck, Building2, Utensils, Truck, Users,
-  CheckCircle2, XCircle, Clock, AlertTriangle, RefreshCw
+  CheckCircle2, XCircle, Clock, AlertTriangle, RefreshCw, UserCog
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -75,12 +76,20 @@ export default function AdminDashboard() {
           </p>
         </div>
 
-        <button
-          onClick={loadData}
-          className="self-start sm:self-auto px-3.5 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl transition flex items-center gap-1.5 shadow-2xs"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh Stats
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <Link
+            to="/admin/profile"
+            className="px-3.5 py-2 text-xs font-bold text-purple-700 bg-purple-50 border border-purple-200 hover:bg-purple-100 rounded-xl transition flex items-center gap-1.5 shadow-2xs"
+          >
+            <UserCog className="w-3.5 h-3.5" /> Admin Profile
+          </Link>
+          <button
+            onClick={loadData}
+            className="px-3.5 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh Stats
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}

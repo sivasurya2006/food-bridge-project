@@ -63,9 +63,19 @@ class MeView(APIView):
         data = request.data
 
         # Update basic fields
-        for field in ['phone', 'address', 'city', 'pincode', 'first_name', 'last_name']:
+        for field in ['phone', 'address', 'city', 'pincode', 'first_name', 'last_name', 'email']:
             if field in data:
                 setattr(user, field, data[field])
+
+        # Password update if requested
+        if 'new_password' in data and data['new_password']:
+            current_password = data.get('current_password')
+            if current_password and not user.check_password(current_password):
+                return Response({'error': 'Current password is incorrect.'}, status=status.HTTP_400_BAD_REQUEST)
+            if len(data['new_password']) < 6:
+                return Response({'error': 'New password must be at least 6 characters.'}, status=status.HTTP_400_BAD_REQUEST)
+            user.set_password(data['new_password'])
+
         user.save()
 
         # Update Org Profile if applicable
@@ -83,6 +93,13 @@ class MeView(APIView):
                 if field in data:
                     setattr(vol, field, data[field])
             vol.save()
+
+        AuditLog.objects.create(
+            actor=request.user,
+            action='PROFILE_UPDATED',
+            target=f"User #{user.id} ({user.username})",
+            details=f"Updated profile fields for role {user.role}"
+        )
 
         return Response(UserSerializer(user).data)
 
