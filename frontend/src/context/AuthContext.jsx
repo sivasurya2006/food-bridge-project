@@ -35,16 +35,9 @@ export const AuthProvider = ({ children }) => {
       setUser(userData);
       return { success: true, user: userData };
     } catch (err) {
-      let msg = 'Login failed. Please check credentials.';
-      if (!err.response) {
-        msg = 'Backend server is not running (http://127.0.0.1:8000). Please start the backend server.';
-      } else if (err.response.data?.non_field_errors?.[0]) {
-        msg = err.response.data.non_field_errors[0];
-      } else if (err.response.data?.error) {
-        msg = err.response.data.error;
-      } else if (typeof err.response.data?.detail === 'string') {
-        msg = err.response.data.detail;
-      }
+      const msg = err.response?.data?.non_field_errors?.[0] || 
+                  err.response?.data?.error || 
+                  'Login failed. Please check credentials.';
       setError(msg);
       return { success: false, error: msg };
     }
@@ -60,11 +53,6 @@ export const AuthProvider = ({ children }) => {
       setUser(createdUser);
       return { success: true, user: createdUser };
     } catch (err) {
-      if (!err.response) {
-        const msg = 'Backend server is not running (http://127.0.0.1:8000). Please start the backend server.';
-        setError(msg);
-        return { success: false, error: msg };
-      }
       const errors = err.response?.data;
       let msg = 'Registration failed.';
       if (errors) {
@@ -86,12 +74,7 @@ export const AuthProvider = ({ children }) => {
       setUser(userData);
       return { success: true, user: userData };
     } catch (err) {
-      let msg = 'Demo login failed.';
-      if (!err.response) {
-        msg = 'Backend server is not running (http://127.0.0.1:8000). Please start the backend server.';
-      } else if (err.response.data?.error) {
-        msg = err.response.data.error;
-      }
+      const msg = err.response?.data?.error || 'Demo login failed.';
       setError(msg);
       return { success: false, error: msg };
     }
