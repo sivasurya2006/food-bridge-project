@@ -459,8 +459,8 @@ export default function DonorDashboard({ defaultTab = 'dashboard' }) {
               </div>
             </div>
 
-            {/* Quantity, Unit & Servings */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Quantity & Unit */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1.5">
                   Quantity <span className="text-rose-500">*</span>
@@ -492,21 +492,6 @@ export default function DonorDashboard({ defaultTab = 'dashboard' }) {
                   <option value="boxes">boxes / cartons</option>
                   <option value="liters">liters</option>
                 </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                  Estimated Servings (People Fed) <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  name="estimated_servings"
-                  min="1"
-                  value={form.estimated_servings}
-                  onChange={handleFormChange}
-                  required
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
-                />
               </div>
             </div>
 
