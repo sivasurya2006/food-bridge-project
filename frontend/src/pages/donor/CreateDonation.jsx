@@ -20,6 +20,7 @@ export default function CreateDonation() {
     title: '',
     description: '',
     category: '',
+    food_type: 'Lunch',
     quantity: 40,
     unit: 'servings',
     estimated_servings: 40,
@@ -154,6 +155,7 @@ export default function CreateDonation() {
       submitData.append('title', formData.title.trim());
       submitData.append('description', formData.description.trim());
       submitData.append('category', formData.category.trim() || 'General Food');
+      submitData.append('food_type', formData.food_type || 'Lunch');
       submitData.append('quantity', parseInt(formData.quantity));
       submitData.append('unit', formData.unit);
       submitData.append('estimated_servings', parseInt(formData.estimated_servings || formData.quantity));
@@ -402,6 +404,27 @@ export default function CreateDonation() {
                 />
                 <p className="text-[11px] text-gray-400 mt-1">
                   Type any category or cuisine freely (e.g. South Indian, North Indian, Buffet, Snacks, etc.)
+                </p>
+              </div>
+
+              {/* Food Type / Meal Timing */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  Meal / Food Type *
+                </label>
+                <select
+                  name="food_type"
+                  value={formData.food_type}
+                  onChange={handleChange}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs sm:text-sm font-semibold focus:ring-2 focus:ring-emerald-500 bg-white"
+                >
+                  <option value="Morning / Breakfast">Morning / Breakfast</option>
+                  <option value="Lunch">Lunch</option>
+                  <option value="Evening / Snacks">Evening / Snacks</option>
+                  <option value="Night / Dinner">Night / Dinner</option>
+                </select>
+                <p className="text-[11px] text-gray-400 mt-1">
+                  Specify whether this donation is for morning breakfast, lunch, evening snacks, or night dinner.
                 </p>
               </div>
 

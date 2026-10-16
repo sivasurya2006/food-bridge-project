@@ -1061,7 +1061,14 @@ export default function AdminDashboard({ defaultTab = 'dashboard' }) {
                         </div>
                         <div>
                           <p className="font-bold text-gray-900">{d.title}</p>
-                          <span className="text-[10px] font-semibold text-gray-400">{d.category}</span>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[10px] font-semibold text-gray-400">{d.category}</span>
+                            {d.food_type && (
+                              <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                {d.food_type}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </td>

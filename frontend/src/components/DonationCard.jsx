@@ -43,10 +43,17 @@ export default function DonationCard({ donation, onRequestClick, isNGO }) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-        {/* Category Pill */}
-        <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/90 backdrop-blur-md text-gray-800 shadow-xs">
-          {donation.category}
-        </span>
+        {/* Category & Meal Timing Pill */}
+        <div className="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap max-w-[70%]">
+          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-white/90 backdrop-blur-md text-gray-800 shadow-xs">
+            {donation.category}
+          </span>
+          {donation.food_type && (
+            <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-950/80 backdrop-blur-md text-white shadow-xs">
+              {donation.food_type}
+            </span>
+          )}
+        </div>
 
         {/* Status Badge */}
         <div className="absolute top-3 right-3">

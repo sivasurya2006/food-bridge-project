@@ -104,10 +104,15 @@ export default function DonationDetail() {
             alt={donation.title}
             className="w-full h-full object-cover"
           />
-          <div className="absolute top-4 left-4 flex gap-2">
+          <div className="absolute top-4 left-4 flex gap-2 flex-wrap">
             <span className="px-3 py-1 rounded-full text-xs font-bold bg-white/95 text-gray-800 shadow-xs">
               {donation.category}
             </span>
+            {donation.food_type && (
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-950/85 backdrop-blur-md text-white shadow-xs">
+                {donation.food_type}
+              </span>
+            )}
           </div>
           <div className="absolute top-4 right-4">
             <span className={`px-3 py-1 rounded-full text-xs font-bold text-white shadow-xs ${

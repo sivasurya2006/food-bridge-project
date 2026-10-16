@@ -196,6 +196,7 @@ export default function DonorDashboard({ defaultTab = 'dashboard' }) {
       title: '',
       description: '',
       category: 'Cooked Meals',
+      food_type: 'Lunch',
       quantity: 30,
       unit: 'servings',
       estimated_servings: 30,
@@ -264,6 +265,7 @@ export default function DonorDashboard({ defaultTab = 'dashboard' }) {
         const data = new FormData();
         data.append('title', form.title.trim());
         data.append('category', form.category);
+        data.append('food_type', form.food_type);
         data.append('quantity', form.quantity);
         data.append('unit', form.unit);
         data.append('estimated_servings', form.estimated_servings || form.quantity);
@@ -421,21 +423,40 @@ export default function DonorDashboard({ defaultTab = 'dashboard' }) {
               <span>Step 2: Enter Donation Details</span>
             </div>
 
-            {/* Food Name & Category */}
+            {/* Food Name */}
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                Food Name <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="title"
+                value={form.title}
+                onChange={handleFormChange}
+                placeholder="e.g. Vegetable Dum Biryani, Fresh Bread Buns"
+                required
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
+              />
+            </div>
+
+            {/* Food Type / Meal Timing & Category */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                  Food Name <span className="text-rose-500">*</span>
+                  Meal / Food Type <span className="text-rose-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  name="title"
-                  value={form.title}
+                <select
+                  name="food_type"
+                  value={form.food_type}
                   onChange={handleFormChange}
-                  placeholder="e.g. Vegetable Dum Biryani, Fresh Bread Buns"
-                  required
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
-                />
+                >
+                  <option value="Morning / Breakfast">Morning / Breakfast</option>
+                  <option value="Lunch">Lunch</option>
+                  <option value="Evening / Snacks">Evening / Snacks</option>
+                  <option value="Night / Dinner">Night / Dinner</option>
+                </select>
+                <p className="text-[10px] text-gray-400 mt-1">Specify meal timing: Morning, Lunch, Evening or Night.</p>
               </div>
 
               <div>
@@ -456,6 +477,7 @@ export default function DonorDashboard({ defaultTab = 'dashboard' }) {
                   <option value="Beverages">Beverages &amp; Juices</option>
                   <option value="Other">Other Surplus Food</option>
                 </select>
+                <p className="text-[10px] text-gray-400 mt-1">Category of edible food.</p>
               </div>
             </div>
 
@@ -943,7 +965,7 @@ export default function DonorDashboard({ defaultTab = 'dashboard' }) {
 
     if (donationSearch.trim()) {
       const q = donationSearch.toLowerCase();
-      return (d.title || '').toLowerCase().includes(q) || (d.category || '').toLowerCase().includes(q);
+      return (d.title || '').toLowerCase().includes(q) || (d.category || '').toLowerCase().includes(q) || (d.food_type || '').toLowerCase().includes(q);
     }
     return true;
   });
@@ -970,7 +992,7 @@ export default function DonorDashboard({ defaultTab = 'dashboard' }) {
 
     if (historySearch.trim()) {
       const q = historySearch.toLowerCase();
-      return (d.title || '').toLowerCase().includes(q) || (d.category || '').toLowerCase().includes(q);
+      return (d.title || '').toLowerCase().includes(q) || (d.category || '').toLowerCase().includes(q) || (d.food_type || '').toLowerCase().includes(q);
     }
     return true;
   });
@@ -1288,7 +1310,15 @@ export default function DonorDashboard({ defaultTab = 'dashboard' }) {
                         <tr key={d.id} className="hover:bg-gray-50/50 transition">
                           <td className="py-3.5 pr-4">
                             <div className="font-bold text-gray-900">{d.title}</div>
-                            <div className="text-[11px] text-gray-400 mt-0.5">{d.category} • ~{d.estimated_servings} servings</div>
+                            <div className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1.5 flex-wrap">
+                              <span>{d.category}</span>
+                              {d.food_type && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                  {d.food_type}
+                                </span>
+                              )}
+                              <span>• ~{d.estimated_servings} servings</span>
+                            </div>
                           </td>
                           <td className="py-3.5">
                             <div className="font-bold text-emerald-700">
@@ -1451,7 +1481,15 @@ export default function DonorDashboard({ defaultTab = 'dashboard' }) {
                             )}
                             <div>
                               <div className="font-bold text-sm text-gray-900">{d.title}</div>
-                              <div className="text-[11px] text-gray-400">{d.category} • ~{d.estimated_servings} servings</div>
+                              <div className="text-[11px] text-gray-400 flex items-center gap-1.5 flex-wrap mt-0.5">
+                                <span>{d.category}</span>
+                                {d.food_type && (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    {d.food_type}
+                                  </span>
+                                )}
+                                <span>• ~{d.estimated_servings} servings</span>
+                              </div>
                               {d.storage_instructions && (
                                 <div className="text-[10px] text-gray-400 italic mt-0.5 line-clamp-1">{d.storage_instructions}</div>
                               )}
@@ -1857,7 +1895,14 @@ export default function DonorDashboard({ defaultTab = 'dashboard' }) {
                     <tr key={d.id} className="hover:bg-gray-50/50 transition">
                       <td className="py-3.5 pr-4">
                         <div className="font-bold text-gray-900">{d.title}</div>
-                        <div className="text-[11px] text-gray-400">{d.category}</div>
+                        <div className="text-[11px] text-gray-400 flex items-center gap-1.5 flex-wrap mt-0.5">
+                          <span>{d.category}</span>
+                          {d.food_type && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              {d.food_type}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-3.5 font-bold text-gray-700">
                         {d.quantity} {d.unit} (~{d.estimated_servings} people)

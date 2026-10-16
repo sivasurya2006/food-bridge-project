@@ -22,10 +22,18 @@ class FoodDonation(models.Model):
         ('EXPIRED', 'Expired'),
     ]
 
+    FOOD_TYPE_CHOICES = [
+        ('Morning / Breakfast', 'Morning / Breakfast'),
+        ('Lunch', 'Lunch'),
+        ('Evening / Snacks', 'Evening / Snacks'),
+        ('Night / Dinner', 'Night / Dinner'),
+    ]
+
     donor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='donations')
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True, default='')
     category = models.CharField(max_length=100, default='General Food')
+    food_type = models.CharField(max_length=50, choices=FOOD_TYPE_CHOICES, default='Lunch', blank=True)
     quantity = models.PositiveIntegerField()
     reserved_quantity = models.PositiveIntegerField(default=0)
     unit = models.CharField(max_length=30, default='servings')

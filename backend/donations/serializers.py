@@ -12,7 +12,7 @@ class FoodDonationSerializer(serializers.ModelSerializer):
         model = FoodDonation
         fields = [
             'id', 'donor', 'donor_username', 'donor_name', 'donor_phone',
-            'title', 'description', 'category', 'quantity', 'reserved_quantity',
+            'title', 'description', 'category', 'food_type', 'quantity', 'reserved_quantity',
             'available_quantity', 'unit', 'estimated_servings', 'prepared_at',
             'pickup_deadline', 'pickup_location', 'city', 'pincode',
             'storage_instructions', 'allergen_information', 'image', 'image_url',
