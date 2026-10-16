@@ -117,9 +117,22 @@ export default function Login() {
 
             {/* Error Banner */}
             {error && (
-              <div className="mb-5 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2.5 shadow-2xs">
-                <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
-                <span className="font-medium">{error}</span>
+              <div className={`mb-5 p-3.5 rounded-xl border text-xs flex flex-col gap-2 shadow-2xs ${
+                error.includes('Backend server')
+                  ? 'bg-amber-50 border-amber-300 text-amber-900'
+                  : 'bg-rose-50 border-rose-200 text-rose-700'
+              }`}>
+                <div className="flex items-center gap-2.5">
+                  <AlertCircle className={`w-5 h-5 shrink-0 ${error.includes('Backend server') ? 'text-amber-600' : 'text-rose-600'}`} />
+                  <span className="font-semibold">{error}</span>
+                </div>
+                {error.includes('Backend server') && (
+                  <div className="text-[11px] bg-amber-100/70 p-2.5 rounded-lg border border-amber-200 text-amber-950 space-y-1">
+                    <p className="font-bold">How to fix after laptop restart:</p>
+                    <p>1. Double-click <strong>START_FOODBRIDGE.bat</strong> on your Desktop.</p>
+                    <p>2. Keep the command prompt windows open while using the application.</p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -174,6 +187,49 @@ export default function Login() {
                     title={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick Fill Demo Credentials */}
+              <div className="pt-1">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                    Quick Fill Credentials:
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => { setIdentifier('admin'); setPassword('admin123'); setError(''); }}
+                    className="px-2 py-1.5 rounded-lg border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 text-[11px] font-semibold text-center transition shadow-2xs"
+                    title="Username: admin | Password: admin123"
+                  >
+                    🛡️ Admin
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setIdentifier('sakthivel'); setPassword('password123'); setError(''); }}
+                    className="px-2 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-semibold text-center transition shadow-2xs"
+                    title="Username: sakthivel | Password: password123"
+                  >
+                    🍲 Donor
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setIdentifier('rajagurushri'); setPassword('password123'); setError(''); }}
+                    className="px-2 py-1.5 rounded-lg border border-teal-200 bg-teal-50 hover:bg-teal-100 text-teal-700 text-[11px] font-semibold text-center transition shadow-2xs"
+                    title="Username: rajagurushri | Password: password123"
+                  >
+                    🏢 NGO
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setIdentifier('prajin'); setPassword('password123'); setError(''); }}
+                    className="px-2 py-1.5 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 text-[11px] font-semibold text-center transition shadow-2xs"
+                    title="Username: prajin | Password: password123"
+                  >
+                    🚴 Volunteer
                   </button>
                 </div>
               </div>
