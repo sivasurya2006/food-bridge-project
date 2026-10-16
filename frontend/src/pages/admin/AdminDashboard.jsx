@@ -109,15 +109,25 @@ export default function AdminDashboard({ defaultTab = 'dashboard' }) {
         api.getNotifications(),
       ]);
 
-      if (statsRes.status === 'fulfilled') setStats(statsRes.value.data);
-      if (detailedRes.status === 'fulfilled') setDetailedAnalytics(detailedRes.value.data);
-      if (orgRes.status === 'fulfilled') setOrganizations(orgRes.value.data);
-      if (reqRes.status === 'fulfilled') setRequests(reqRes.value.data);
-      if (donRes.status === 'fulfilled') setDonations(donRes.value.data);
-      if (userRes.status === 'fulfilled') setUsersList(userRes.value.data);
-      if (compRes.status === 'fulfilled') setComplaints(compRes.value.data);
-      if (settingsRes.status === 'fulfilled') setPlatformSettings((prev) => ({ ...prev, ...settingsRes.value.data }));
-      if (notifRes.status === 'fulfilled') setNotifications(notifRes.value.data);
+      const extractArray = (res) => {
+        if (!res || res.status !== 'fulfilled' || !res.value?.data) return [];
+        const d = res.value.data;
+        if (Array.isArray(d)) return d;
+        if (Array.isArray(d.results)) return d.results;
+        return [];
+      };
+
+      if (statsRes.status === 'fulfilled' && statsRes.value?.data) setStats(statsRes.value.data);
+      if (detailedRes.status === 'fulfilled' && detailedRes.value?.data) setDetailedAnalytics(detailedRes.value.data);
+      setOrganizations(extractArray(orgRes));
+      setRequests(extractArray(reqRes));
+      setDonations(extractArray(donRes));
+      setUsersList(extractArray(userRes));
+      setComplaints(extractArray(compRes));
+      if (settingsRes.status === 'fulfilled' && settingsRes.value?.data) {
+        setPlatformSettings((prev) => ({ ...prev, ...settingsRes.value.data }));
+      }
+      setNotifications(extractArray(notifRes));
     } catch (err) {
       console.error('Admin data load error:', err);
     } finally {
@@ -152,7 +162,7 @@ export default function AdminDashboard({ defaultTab = 'dashboard' }) {
       await api.verifyOrganization(id, status);
       setActionMessage({ type: 'success', text: `Organisation ${status === 'approved' ? 'verified & approved' : 'rejected'}.` });
       const orgRes = await api.getOrganizations();
-      setOrganizations(orgRes.data);
+      setOrganizations(Array.isArray(orgRes.data) ? orgRes.data : (orgRes.data?.results || []));
     } catch {
       setActionMessage({ type: 'error', text: 'Failed to update organization status.' });
     } finally {
@@ -169,7 +179,7 @@ export default function AdminDashboard({ defaultTab = 'dashboard' }) {
         text: `Request approved! Volunteer pickup dispatched (Handover OTP: ${res.data.pickup_otp}).`
       });
       const reqRes = await api.getDonorIncomingRequests();
-      setRequests(reqRes.data);
+      setRequests(Array.isArray(reqRes.data) ? reqRes.data : (reqRes.data?.results || []));
     } catch (err) {
       setActionMessage({ type: 'error', text: err.response?.data?.error || 'Failed to approve request.' });
     } finally {
@@ -183,7 +193,7 @@ export default function AdminDashboard({ defaultTab = 'dashboard' }) {
       const res = await api.toggleUserStatus(id);
       setActionMessage({ type: 'success', text: res.data.message });
       const usersRes = await api.getAdminUsers();
-      setUsersList(usersRes.data);
+      setUsersList(Array.isArray(usersRes.data) ? usersRes.data : (usersRes.data?.results || []));
     } catch (err) {
       setActionMessage({ type: 'error', text: err.response?.data?.error || 'Failed to toggle user status.' });
     } finally {
@@ -197,7 +207,7 @@ export default function AdminDashboard({ defaultTab = 'dashboard' }) {
       await api.resolveComplaint(id, { status: newStatus, admin_notes: notes });
       setActionMessage({ type: 'success', text: `Complaint marked as ${newStatus}.` });
       const compRes = await api.getAdminComplaints();
-      setComplaints(compRes.data);
+      setComplaints(Array.isArray(compRes.data) ? compRes.data : (compRes.data?.results || []));
     } catch {
       setActionMessage({ type: 'error', text: 'Failed to update complaint.' });
     } finally {
@@ -270,7 +280,7 @@ export default function AdminDashboard({ defaultTab = 'dashboard' }) {
       await api.cancelDonation(id);
       setActionMessage({ type: 'success', text: 'Donation listing cancelled & removed from public exploration.' });
       const donRes = await api.getDonations();
-      setDonations(donRes.data);
+      setDonations(Array.isArray(donRes.data) ? donRes.data : (donRes.data?.results || []));
     } catch {
       setActionMessage({ type: 'error', text: 'Failed to cancel donation.' });
     } finally {
@@ -278,8 +288,16 @@ export default function AdminDashboard({ defaultTab = 'dashboard' }) {
     }
   };
 
+  // Safe Array Wrappers
+  const safeUsers = Array.isArray(usersList) ? usersList : [];
+  const safeOrgs = Array.isArray(organizations) ? organizations : [];
+  const safeRequests = Array.isArray(requests) ? requests : [];
+  const safeDonations = Array.isArray(donations) ? donations : [];
+  const safeComplaints = Array.isArray(complaints) ? complaints : [];
+  const safeNotifications = Array.isArray(notifications) ? notifications : [];
+
   // Filtered User list
-  const filteredUsers = usersList.filter((u) => {
+  const filteredUsers = safeUsers.filter((u) => {
     if (userRoleFilter !== 'ALL' && u.role !== userRoleFilter) return false;
     if (userStatusFilter === 'active' && !u.is_active) return false;
     if (userStatusFilter === 'suspended' && u.is_active) return false;
@@ -295,12 +313,12 @@ export default function AdminDashboard({ defaultTab = 'dashboard' }) {
   });
 
   // Filtered Donations list
-  const filteredDonations = donations.filter((d) => {
+  const filteredDonations = safeDonations.filter((d) => {
     if (donationStatusFilter !== 'ALL' && d.status !== donationStatusFilter) return false;
     if (donationCategoryFilter !== 'ALL' && d.category !== donationCategoryFilter) return false;
     if (donationSearchQuery.trim()) {
       const q = donationSearchQuery.toLowerCase();
-      const matchTitle = d.title.toLowerCase().includes(q);
+      const matchTitle = (d.title || '').toLowerCase().includes(q);
       const matchDonor = (d.donor_username || '').toLowerCase().includes(q);
       const matchCity = (d.city || '').toLowerCase().includes(q);
       if (!matchTitle && !matchDonor && !matchCity) return false;
@@ -309,7 +327,7 @@ export default function AdminDashboard({ defaultTab = 'dashboard' }) {
   });
 
   // Filtered Complaints
-  const filteredComplaints = complaints.filter((c) => {
+  const filteredComplaints = safeComplaints.filter((c) => {
     if (complaintStatusFilter !== 'ALL' && c.status !== complaintStatusFilter) return false;
     return true;
   });
@@ -317,21 +335,21 @@ export default function AdminDashboard({ defaultTab = 'dashboard' }) {
   // Numbers requested by user
   const cardData = {
     totalUsers: detailedAnalytics?.stat_cards?.total_users || 1250,
-    pendingVerifications: organizations.filter(o => o.verification_status === 'pending').length || 12,
+    pendingVerifications: safeOrgs.filter(o => o.verification_status === 'pending').length || 12,
     completedDonations: detailedAnalytics?.stat_cards?.completed_donations || 340,
-    activeDeliveries: requests.filter(r => r.pickup_status === 'ASSIGNED' || r.pickup_status === 'IN_TRANSIT').length || 24,
+    activeDeliveries: safeRequests.filter(r => r.pickup_status === 'ASSIGNED' || r.pickup_status === 'IN_TRANSIT').length || 24,
   };
 
   // Nav items definition
   const navTabs = [
     { id: 'dashboard', label: '1. Dashboard', icon: LayoutDashboard },
-    { id: 'users', label: '2. User Management', icon: Users, badge: usersList.length || null },
+    { id: 'users', label: '2. User Management', icon: Users, badge: safeUsers.length || null },
     { id: 'ngos', label: '3. NGO Verification', icon: ShieldCheck, badge: cardData.pendingVerifications ? `${cardData.pendingVerifications} Pending` : null, badgeColor: 'bg-amber-100 text-amber-800' },
-    { id: 'donations', label: '4. Food Donations', icon: Utensils, badge: donations.length || null },
-    { id: 'deliveries', label: '5. Requests & Deliveries', icon: Truck, badge: requests.length || null },
-    { id: 'complaints', label: '6. Reports & Complaints', icon: AlertTriangle, badge: complaints.filter(c => c.status === 'PENDING').length ? `${complaints.filter(c => c.status === 'PENDING').length} Alert` : null, badgeColor: 'bg-rose-100 text-rose-800' },
+    { id: 'donations', label: '4. Food Donations', icon: Utensils, badge: safeDonations.length || null },
+    { id: 'deliveries', label: '5. Requests & Deliveries', icon: Truck, badge: safeRequests.length || null },
+    { id: 'complaints', label: '6. Reports & Complaints', icon: AlertTriangle, badge: safeComplaints.filter(c => c.status === 'PENDING').length ? `${safeComplaints.filter(c => c.status === 'PENDING').length} Alert` : null, badgeColor: 'bg-rose-100 text-rose-800' },
     { id: 'analytics', label: '7. Analytics & Reports', icon: BarChart3 },
-    { id: 'notifications', label: '8. Notifications', icon: Bell, badge: notifications.filter(n => !n.is_read).length || null },
+    { id: 'notifications', label: '8. Notifications', icon: Bell, badge: safeNotifications.filter(n => !n.is_read).length || null },
     { id: 'settings', label: '9. Settings', icon: Settings },
   ];
 
@@ -629,7 +647,7 @@ export default function AdminDashboard({ defaultTab = 'dashboard' }) {
               </div>
 
               <div className="space-y-3">
-                {organizations.slice(0, 3).map((org) => (
+                {safeOrgs.slice(0, 3).map((org) => (
                   <div key={org.id} className="p-3 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
                     <div className="flex items-start justify-between">
                       <div>
@@ -684,7 +702,7 @@ export default function AdminDashboard({ defaultTab = 'dashboard' }) {
               </div>
 
               <div className="space-y-3">
-                {complaints.slice(0, 3).map((comp) => (
+                {safeComplaints.slice(0, 3).map((comp) => (
                   <div key={comp.id} className="p-3 bg-rose-50/40 rounded-2xl border border-rose-100 space-y-1.5">
                     <div className="flex items-start justify-between gap-2">
                       <h4 className="text-xs font-bold text-gray-900 line-clamp-1">{comp.title}</h4>
@@ -761,7 +779,7 @@ export default function AdminDashboard({ defaultTab = 'dashboard' }) {
               </p>
             </div>
             <span className="text-xs font-bold text-gray-500 bg-slate-100 px-3 py-1.5 rounded-xl">
-              {filteredUsers.length} of {usersList.length} Accounts
+              {filteredUsers.length} of {safeUsers.length} Accounts
             </span>
           </div>
 
@@ -920,12 +938,12 @@ export default function AdminDashboard({ defaultTab = 'dashboard' }) {
               </p>
             </div>
             <span className="text-xs font-bold text-purple-700 bg-purple-50 px-3 py-1.5 rounded-xl border border-purple-200">
-              {organizations.filter(o => o.verification_status === 'pending').length} Pending Approval
+              {safeOrgs.filter(o => o.verification_status === 'pending').length} Pending Approval
             </span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {organizations.map((org) => (
+            {safeOrgs.map((org) => (
               <div
                 key={org.id}
                 className={`p-5 rounded-3xl border transition space-y-3 ${
@@ -1143,7 +1161,7 @@ export default function AdminDashboard({ defaultTab = 'dashboard' }) {
               </p>
             </div>
             <span className="text-xs font-bold text-teal-800 bg-teal-50 px-3 py-1.5 rounded-xl border border-teal-200">
-              {requests.length} Allocation Requests
+              {safeRequests.length} Allocation Requests
             </span>
           </div>
 
@@ -1162,7 +1180,7 @@ export default function AdminDashboard({ defaultTab = 'dashboard' }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {requests.map((r) => (
+                {safeRequests.map((r) => (
                   <tr key={r.id} className="hover:bg-slate-50/60 transition">
                     <td className="py-3.5 font-mono font-bold text-gray-400">#{r.id}</td>
                     <td className="py-3.5 pr-4">
@@ -1390,7 +1408,8 @@ export default function AdminDashboard({ defaultTab = 'dashboard' }) {
               onClick={async () => {
                 await api.markAllNotificationsRead();
                 const notifRes = await api.getNotifications();
-                setNotifications(notifRes.data);
+                const notifList = Array.isArray(notifRes.data) ? notifRes.data : (notifRes.data?.results || []);
+                setNotifications(notifList);
               }}
               className="px-3.5 py-1.5 text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-xl transition cursor-pointer"
             >
@@ -1399,10 +1418,10 @@ export default function AdminDashboard({ defaultTab = 'dashboard' }) {
           </div>
 
           <div className="space-y-3">
-            {notifications.length === 0 ? (
+            {safeNotifications.length === 0 ? (
               <div className="py-12 text-center text-gray-400">No active notifications.</div>
             ) : (
-              notifications.map((notif) => (
+              safeNotifications.map((notif) => (
                 <div
                   key={notif.id}
                   className={`p-4 rounded-2xl border transition flex items-start justify-between gap-3 ${
@@ -1427,7 +1446,7 @@ export default function AdminDashboard({ defaultTab = 'dashboard' }) {
                       onClick={async () => {
                         await api.markNotificationRead(notif.id);
                         setNotifications((prev) =>
-                          prev.map((n) => (n.id === notif.id ? { ...n, is_read: true } : n))
+                          (Array.isArray(prev) ? prev : []).map((n) => (n.id === notif.id ? { ...n, is_read: true } : n))
                         );
                       }}
                       className="text-xs text-purple-700 font-bold hover:underline shrink-0"
