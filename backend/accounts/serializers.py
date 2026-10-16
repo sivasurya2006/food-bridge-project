@@ -1,12 +1,27 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from .models import User, OrganizationProfile, VolunteerProfile, AuditLog
+from .models import User, OrganizationProfile, VolunteerProfile, AuditLog, Complaint, PlatformSetting
 
 class OrganizationProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrganizationProfile
         fields = ['id', 'organisation_name', 'reg_number', 'contact_person', 'address', 'city', 'pincode', 'verification_status', 'created_at']
         read_only_fields = ['id', 'created_at']
+
+
+class ComplaintSerializer(serializers.ModelSerializer):
+    reported_by_username = serializers.ReadOnlyField(source='reported_by.username')
+    reported_user_username = serializers.ReadOnlyField(source='reported_user.username')
+
+    class Meta:
+        model = Complaint
+        fields = [
+            'id', 'reported_by', 'reported_by_username', 'reported_user',
+            'reported_user_username', 'donation_id', 'title', 'category',
+            'description', 'status', 'admin_notes', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
 
 
 class VolunteerProfileSerializer(serializers.ModelSerializer):

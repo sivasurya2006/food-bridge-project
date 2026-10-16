@@ -64,6 +64,16 @@ export const api = {
   getNotifications: () => apiClient.get('/notifications/'),
   markNotificationRead: (id) => apiClient.post(`/notifications/${id}/read/`),
   markAllNotificationsRead: () => apiClient.post('/notifications/read-all/'),
+
+  // Admin Management Suite
+  getAdminUsers: (params) => apiClient.get('/admin/users/', { params }),
+  toggleUserStatus: (id) => apiClient.post(`/admin/users/${id}/toggle-status/`),
+  getAdminComplaints: (params) => apiClient.get('/admin/complaints/', { params }),
+  resolveComplaint: (id, data) => apiClient.post(`/admin/complaints/${id}/resolve/`, data),
+  getAdminSettings: () => apiClient.get('/admin/settings/'),
+  updateAdminSettings: (data) => apiClient.post('/admin/settings/', data),
+  getAdminAnalyticsDetailed: () => apiClient.get('/admin/analytics/'),
 };
+
 
 export default apiClient;

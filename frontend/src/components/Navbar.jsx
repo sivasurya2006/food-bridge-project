@@ -5,7 +5,8 @@ import NotificationDropdown from './NotificationDropdown';
 import {
   HeartHandshake, PlusCircle, LayoutDashboard, Truck,
   Building2, ShieldCheck, LogOut, Menu, X, Inbox,
-  ChevronDown, CheckCircle2, Sparkles, Home, Utensils, Info, Shield, User, UserCog
+  ChevronDown, CheckCircle2, Sparkles, Home, Utensils, Info, Shield, User, UserCog,
+  Users, BarChart3, Bell, Settings, AlertTriangle
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -33,13 +34,18 @@ export default function Navbar() {
   };
 
   const isActive = (path) => {
-    if (path.includes('#')) {
-      return (location.pathname + location.hash) === path;
+    if (path === '/admin/dashboard') {
+      return location.pathname === '/admin/dashboard' && (!location.search || location.search.includes('tab=dashboard'));
     }
-    return location.pathname === path && !location.hash;
+    if (path.startsWith('/admin/')) {
+      const tabName = path.replace('/admin/', '');
+      return location.pathname === path || (location.pathname === '/admin/dashboard' && location.search.includes(`tab=${tabName}`));
+    }
+    return location.pathname === path;
   };
 
   const closeMobile = () => setMobileMenuOpen(false);
+
 
   const navItemClass = (path) => `
     flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all
@@ -126,32 +132,76 @@ export default function Navbar() {
         {/* Navigation Sections */}
         <div className="space-y-4">
           {isAdmin ? (
-            /* Dedicated Admin Navigation: ONLY what Admin needs */
+            /* Dedicated Admin Navigation: EXACT 10 MODULES */
             <div>
               <div className="px-3 mb-1.5 text-[10px] font-bold tracking-wider text-purple-700 uppercase">
-                Admin Control
+                Admin Control Center
               </div>
               <nav className="space-y-1">
+                {/* 1. Dashboard */}
                 <Link to="/admin/dashboard" onClick={closeMobile} className={navItemClass('/admin/dashboard')}>
-                  <ShieldCheck className="w-4 h-4 shrink-0" />
-                  <span>Admin Dashboard</span>
+                  <LayoutDashboard className="w-4 h-4 shrink-0" />
+                  <span>1. Dashboard</span>
                 </Link>
-                <Link to="/admin/dashboard#organizations" onClick={closeMobile} className={navItemClass('/admin/dashboard#organizations')}>
-                  <Building2 className="w-4 h-4 shrink-0" />
-                  <span>NGO Verifications</span>
+
+                {/* 2. User Management */}
+                <Link to="/admin/users" onClick={closeMobile} className={navItemClass('/admin/users')}>
+                  <Users className="w-4 h-4 shrink-0" />
+                  <span>2. User Management</span>
                 </Link>
-                <Link to="/admin/dashboard#requests" onClick={closeMobile} className={navItemClass('/admin/dashboard#requests')}>
-                  <Inbox className="w-4 h-4 shrink-0" />
-                  <span>Requests &amp; Dispatch</span>
+
+                {/* 3. NGO Verification */}
+                <Link to="/admin/ngos" onClick={closeMobile} className={navItemClass('/admin/ngos')}>
+                  <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-600" />
+                  <span className="flex-1">3. NGO Verification</span>
+                  <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.2 rounded-full">New</span>
                 </Link>
-                <Link to="/donations" onClick={closeMobile} className={navItemClass('/donations')}>
+
+                {/* 4. Food Donations */}
+                <Link to="/admin/donations" onClick={closeMobile} className={navItemClass('/admin/donations')}>
                   <Utensils className="w-4 h-4 shrink-0" />
-                  <span>All Food Donations</span>
+                  <span>4. Food Donations</span>
                 </Link>
-                <Link to="/profile" onClick={closeMobile} className={navItemClass('/profile')}>
-                  <UserCog className="w-4 h-4 shrink-0" />
-                  <span>Admin Profile</span>
+
+                {/* 5. Requests & Deliveries */}
+                <Link to="/admin/deliveries" onClick={closeMobile} className={navItemClass('/admin/deliveries')}>
+                  <Truck className="w-4 h-4 shrink-0" />
+                  <span>5. Requests &amp; Deliveries</span>
                 </Link>
+
+                {/* 6. Reports & Complaints */}
+                <Link to="/admin/complaints" onClick={closeMobile} className={navItemClass('/admin/complaints')}>
+                  <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
+                  <span>6. Reports &amp; Complaints</span>
+                </Link>
+
+                {/* 7. Analytics & Reports */}
+                <Link to="/admin/analytics" onClick={closeMobile} className={navItemClass('/admin/analytics')}>
+                  <BarChart3 className="w-4 h-4 shrink-0" />
+                  <span>7. Analytics &amp; Reports</span>
+                </Link>
+
+                {/* 8. Notifications */}
+                <Link to="/admin/notifications" onClick={closeMobile} className={navItemClass('/admin/notifications')}>
+                  <Bell className="w-4 h-4 shrink-0" />
+                  <span>8. Notifications</span>
+                </Link>
+
+                {/* 9. Settings */}
+                <Link to="/admin/settings" onClick={closeMobile} className={navItemClass('/admin/settings')}>
+                  <Settings className="w-4 h-4 shrink-0" />
+                  <span>9. Settings</span>
+                </Link>
+
+                {/* 10. Logout */}
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-rose-700 hover:bg-rose-50 transition cursor-pointer text-left"
+                >
+                  <LogOut className="w-4 h-4 shrink-0 text-rose-600" />
+                  <span>10. Logout</span>
+                </button>
               </nav>
             </div>
           ) : (

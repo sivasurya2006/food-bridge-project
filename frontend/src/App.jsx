@@ -179,11 +179,76 @@ export default function App() {
               />
 
               {/* Protected Admin Routes */}
+              {/* Protected Admin Routes */}
               <Route
                 path="/admin/dashboard"
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN']}>
-                    <AdminDashboard />
+                    <AdminDashboard defaultTab="dashboard" />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/users"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN']}>
+                    <AdminDashboard defaultTab="users" />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/ngos"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN']}>
+                    <AdminDashboard defaultTab="ngos" />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/donations"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN']}>
+                    <AdminDashboard defaultTab="donations" />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/deliveries"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN']}>
+                    <AdminDashboard defaultTab="deliveries" />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/complaints"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN']}>
+                    <AdminDashboard defaultTab="complaints" />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/analytics"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN']}>
+                    <AdminDashboard defaultTab="analytics" />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/notifications"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN']}>
+                    <AdminDashboard defaultTab="notifications" />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/settings"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN']}>
+                    <AdminDashboard defaultTab="settings" />
                   </ProtectedRoute>
                 }
               />
