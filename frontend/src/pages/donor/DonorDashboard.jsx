@@ -12,33 +12,6 @@ import {
   Building2, Phone, Mail, Award, Lock, Save, ExternalLink
 } from 'lucide-react';
 
-const SAMPLE_PRESETS = [
-  {
-    name: 'Meals',
-    title: 'South Indian Veg Meals',
-    category: 'Cooked Meals',
-    url: 'https://images.unsplash.com/photo-1610057099443-fde8c4d50f91?auto=format&fit=crop&w=600&q=80',
-  },
-  {
-    name: 'Biryani',
-    title: 'Vegetable Dum Biryani',
-    category: 'Cooked Meals',
-    url: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=600&q=80',
-  },
-  {
-    name: 'Bakery',
-    title: 'Fresh Breads & Buns',
-    category: 'Bakery & Bread',
-    url: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80',
-  },
-  {
-    name: 'Produce',
-    title: 'Fresh Farm Produce',
-    category: 'Fresh Produce',
-    url: 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=600&q=80',
-  },
-];
-
 export default function DonorDashboard({ defaultTab = 'dashboard' }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -217,7 +190,7 @@ export default function DonorDashboard({ defaultTab = 'dashboard' }) {
   // =========================================================================
   const CreateDonationForm = () => {
     const defaultDeadline = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 16);
-    const defaultPrepared = new Date(Date.now() - 2 * 3600 * 1000).toISOString().slice(0, 16);
+    const defaultPreparedDate = new Date().toISOString().slice(0, 10);
 
     const [form, setForm] = useState({
       title: '',
@@ -226,7 +199,7 @@ export default function DonorDashboard({ defaultTab = 'dashboard' }) {
       quantity: 30,
       unit: 'servings',
       estimated_servings: 30,
-      prepared_at: defaultPrepared,
+      prepared_at: defaultPreparedDate,
       pickup_deadline: defaultDeadline,
       pickup_location: user?.address || '100 Grand Boulevard, Dispatch Gate',
       city: user?.city || 'Metro City',
@@ -259,28 +232,20 @@ export default function DonorDashboard({ defaultTab = 'dashboard' }) {
       }
     };
 
-    const handlePresetSelect = async (preset) => {
-      setForm((prev) => ({
-        ...prev,
-        title: preset.title,
-        category: preset.category,
-      }));
-      setPreviewUrl(preset.url);
-      try {
-        const response = await fetch(preset.url);
-        const blob = await response.blob();
-        const file = new File([blob], `${preset.name.toLowerCase()}_sample.jpg`, { type: blob.type || 'image/jpeg' });
-        setSelectedFile(file);
-        setFormError('');
-      } catch (err) {
-        console.error("Could not load preset photo:", err);
-      }
+    const handleRemoveFile = () => {
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      if (fileRef.current) fileRef.current.value = '';
     };
 
     const handleSubmit = async (e) => {
       e.preventDefault();
       setFormError('');
 
+      if (!selectedFile) {
+        setFormError('Please upload a food photo first.');
+        return;
+      }
       if (!form.title.trim()) {
         setFormError('Please enter a food title.');
         return;
@@ -327,6 +292,8 @@ export default function DonorDashboard({ defaultTab = 'dashboard' }) {
       }
     };
 
+    const hasPhoto = Boolean(selectedFile || previewUrl);
+
     return (
       <div className="bg-white rounded-3xl border border-gray-100 p-6 sm:p-8 shadow-xs space-y-8">
         <div>
@@ -336,7 +303,9 @@ export default function DonorDashboard({ defaultTab = 'dashboard' }) {
           </div>
           <h2 className="text-2xl font-black text-gray-900 tracking-tight">Create Food Donation</h2>
           <p className="text-xs sm:text-sm text-gray-500 mt-1">
-            Enter the surplus food details. NGOs can request specific portion sizes from your total quantity.
+            {hasPhoto
+              ? 'Food photo verified. Fill in the donation details below to publish your surplus food listing.'
+              : 'Upload or snap a food photo to unlock the donation listing options.'}
           </p>
         </div>
 
@@ -347,315 +316,349 @@ export default function DonorDashboard({ defaultTab = 'dashboard' }) {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Quick Presets */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-2">
-              Quick Presets (Click to autofill sample meals &amp; photo):
+        {/* STEP 1: FOOD IMAGE UPLOAD */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <label className="flex items-center gap-2 text-xs font-bold text-gray-800 uppercase tracking-wide">
+              <Camera className="w-4 h-4 text-emerald-600" />
+              <span>Step 1: Upload Food Photo <span className="text-rose-500">*</span></span>
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              {SAMPLE_PRESETS.map((preset) => (
-                <button
-                  key={preset.name}
-                  type="button"
-                  onClick={() => handlePresetSelect(preset)}
-                  className="flex items-center gap-2 p-2 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-xl transition text-left cursor-pointer group"
-                >
-                  <img src={preset.url} alt={preset.name} className="w-9 h-9 rounded-lg object-cover shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold text-gray-800 group-hover:text-emerald-700 truncate">{preset.name}</p>
-                    <p className="text-[10px] text-gray-400 truncate">{preset.category}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
+            {hasPhoto && (
+              <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                <Check className="w-3.5 h-3.5" />
+                Photo Attached
+              </span>
+            )}
           </div>
 
-          {/* Food Name & Category */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                Food Name <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="title"
-                value={form.title}
-                onChange={handleFormChange}
-                placeholder="e.g. Vegetable Dum Biryani, Fresh Bread Buns"
-                required
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
-              />
-            </div>
+          <input
+            type="file"
+            ref={fileRef}
+            onChange={handleFileSelect}
+            accept="image/*"
+            className="hidden"
+          />
 
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                Food Category <span className="text-rose-500">*</span>
-              </label>
-              <select
-                name="category"
-                value={form.category}
-                onChange={handleFormChange}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
-              >
-                <option value="Cooked Meals">Cooked Meals / Prepared Food</option>
-                <option value="Bakery & Bread">Bakery &amp; Bread</option>
-                <option value="Fresh Produce">Fresh Produce (Fruits &amp; Vegetables)</option>
-                <option value="Packaged Food">Packaged &amp; Canned Groceries</option>
-                <option value="Dairy & Milk">Dairy &amp; Milk Products</option>
-                <option value="Beverages">Beverages &amp; Juices</option>
-                <option value="Other">Other Surplus Food</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Quantity, Unit & Servings */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                Quantity <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="number"
-                name="quantity"
-                min="1"
-                value={form.quantity}
-                onChange={handleFormChange}
-                required
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                Unit of Measurement
-              </label>
-              <select
-                name="unit"
-                value={form.unit}
-                onChange={handleFormChange}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
-              >
-                <option value="servings">servings / portions</option>
-                <option value="kg">kg (kilograms)</option>
-                <option value="packets">packets / meal boxes</option>
-                <option value="boxes">boxes / cartons</option>
-                <option value="liters">liters</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                Estimated People Fed (Servings) <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="number"
-                name="estimated_servings"
-                min="1"
-                value={form.estimated_servings}
-                onChange={handleFormChange}
-                required
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
-              />
-            </div>
-          </div>
-
-          {/* Timestamps: Preparation Time & Pickup Deadline */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                Preparation Time <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="datetime-local"
-                name="prepared_at"
-                value={form.prepared_at}
-                onChange={handleFormChange}
-                required
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
-              />
-              <p className="text-[10px] text-gray-400 mt-1">When the food was cooked or packed.</p>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                Pickup Deadline <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="datetime-local"
-                name="pickup_deadline"
-                value={form.pickup_deadline}
-                onChange={handleFormChange}
-                required
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
-              />
-              <p className="text-[10px] text-gray-400 mt-1">Time after which food is no longer safe.</p>
-            </div>
-          </div>
-
-          {/* Location & Address */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                Pickup Address / Kitchen Location <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="pickup_location"
-                value={form.pickup_location}
-                onChange={handleFormChange}
-                placeholder="Restaurant address, gate number, or kitchen dispatch bay"
-                required
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                City &amp; Pincode
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  name="city"
-                  value={form.city}
-                  onChange={handleFormChange}
-                  placeholder="City"
-                  className="w-2/3 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
-                />
-                <input
-                  type="text"
-                  name="pincode"
-                  value={form.pincode}
-                  onChange={handleFormChange}
-                  placeholder="Pin"
-                  className="w-1/3 px-2 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition text-center"
-                />
+          {!hasPhoto ? (
+            /* Unuploaded State: Large Inviting Card */
+            <div
+              onClick={() => fileRef.current?.click()}
+              className="group cursor-pointer p-8 sm:p-10 border-2 border-dashed border-emerald-300 hover:border-emerald-500 rounded-3xl bg-emerald-50/40 hover:bg-emerald-50/80 transition-all text-center space-y-4"
+            >
+              <div className="w-16 h-16 rounded-2xl bg-white border border-emerald-200 text-emerald-600 mx-auto flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                <Camera className="w-8 h-8" />
               </div>
-            </div>
-          </div>
-
-          {/* Storage & Allergens */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                Storage Instructions
-              </label>
-              <input
-                type="text"
-                name="storage_instructions"
-                value={form.storage_instructions}
-                onChange={handleFormChange}
-                placeholder="e.g. Keep refrigerated, or consume within 3 hours"
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                Allergen Information
-              </label>
-              <input
-                type="text"
-                name="allergen_information"
-                value={form.allergen_information}
-                onChange={handleFormChange}
-                placeholder="e.g. Contains peanuts, dairy, gluten or nut-free"
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
-              />
-            </div>
-          </div>
-
-          {/* Additional Notes */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1.5">
-              Additional Notes / Pickup Instructions
-            </label>
-            <textarea
-              name="description"
-              rows="2"
-              value={form.description}
-              onChange={handleFormChange}
-              placeholder="e.g. Bring insulated carry boxes; parking available at the rear ramp."
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
-            />
-          </div>
-
-          {/* Food Image Upload */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1.5">
-              Food Image Upload
-            </label>
-            <div className="flex flex-col sm:flex-row items-center gap-4 p-4 border-2 border-dashed border-gray-200 rounded-2xl bg-slate-50/50">
-              <input
-                type="file"
-                ref={fileRef}
-                onChange={handleFileSelect}
-                accept="image/*"
-                className="hidden"
-              />
-              {previewUrl ? (
-                <div className="relative w-32 h-24 rounded-xl overflow-hidden border border-gray-200 shadow-2xs shrink-0">
-                  <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedFile(null);
-                      setPreviewUrl(null);
-                    }}
-                    className="absolute top-1 right-1 p-1 bg-black/60 hover:bg-rose-600 text-white rounded-full transition"
-                  >
-                    <XCircle className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ) : (
-                <div className="w-20 h-20 rounded-xl bg-gray-100 flex flex-col items-center justify-center text-gray-400 shrink-0">
-                  <Camera className="w-7 h-7 mb-1" />
-                  <span className="text-[9px] uppercase font-bold">No photo</span>
-                </div>
-              )}
-              <div className="flex-1 text-center sm:text-left space-y-1">
-                <button
-                  type="button"
-                  onClick={() => fileRef.current?.click()}
-                  className="px-3.5 py-2 bg-white border border-gray-200 hover:border-emerald-300 text-gray-700 text-xs font-bold rounded-xl shadow-2xs hover:bg-emerald-50 transition"
-                >
-                  {previewUrl ? 'Change Photo' : 'Browse or Snap Photo'}
-                </button>
-                <p className="text-[11px] text-gray-400">
-                  Upload an image of the packed food, or click one of the presets above.
+              <div className="space-y-1">
+                <h3 className="font-extrabold text-base text-gray-900 group-hover:text-emerald-800 transition-colors">
+                  Click to Upload or Snap Food Photo
+                </h3>
+                <p className="text-xs text-gray-500 max-w-md mx-auto">
+                  Take a clear photo of the prepared meal, packed boxes, or food containers.
                 </p>
               </div>
+              <div>
+                <span className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-sm shadow-emerald-600/25 group-hover:bg-emerald-700 transition">
+                  <Camera className="w-3.5 h-3.5" />
+                  Choose Food Photo
+                </span>
+              </div>
+              <p className="text-[11px] text-gray-400">
+                Supports JPG, PNG, WEBP up to 5MB. Photo upload is required to unlock donation details.
+              </p>
             </div>
-          </div>
+          ) : (
+            /* Uploaded State: Clean preview thumbnail with Change / Remove actions */
+            <div className="flex flex-col sm:flex-row items-center gap-5 p-4 border border-emerald-200 rounded-2xl bg-emerald-50/30">
+              <div className="relative w-36 h-28 rounded-2xl overflow-hidden border border-emerald-300 shadow-xs shrink-0">
+                <img src={previewUrl} alt="Food Preview" className="w-full h-full object-cover" />
+              </div>
+              <div className="space-y-2 text-center sm:text-left flex-1">
+                <div>
+                  <h4 className="font-bold text-sm text-gray-900">Food Photo Attached</h4>
+                  <p className="text-xs text-gray-500">
+                    {selectedFile?.name || 'Selected Food Image'}
+                  </p>
+                </div>
+                <div className="flex items-center justify-center sm:justify-start gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => fileRef.current?.click()}
+                    className="px-3.5 py-1.5 bg-white border border-gray-200 hover:border-emerald-300 text-gray-700 text-xs font-bold rounded-xl shadow-2xs hover:bg-emerald-50 transition"
+                  >
+                    Change Photo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleRemoveFile}
+                    className="px-3.5 py-1.5 bg-white border border-rose-200 hover:border-rose-300 text-rose-700 text-xs font-bold rounded-xl shadow-2xs hover:bg-rose-50 transition flex items-center gap-1"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
-          {/* Submit Button */}
-          <div className="pt-4 flex items-center justify-end gap-3 border-t border-gray-100">
-            <button
-              type="button"
-              onClick={() => switchTab('donations')}
-              className="px-5 py-2.5 border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-xl transition"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 text-white text-xs font-bold rounded-xl transition shadow-sm shadow-emerald-600/30 flex items-center gap-2"
-            >
-              {submitting ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Publishing Listing...</span>
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Publish Food Donation</span>
-                </>
-              )}
-            </button>
+        {/* STEP 2: REMAINING OPTIONS (Only shown when hasPhoto is true!) */}
+        {!hasPhoto ? (
+          /* Locked placeholder message */
+          <div className="p-6 rounded-2xl border border-gray-200 bg-slate-50/70 text-center space-y-2">
+            <div className="w-10 h-10 rounded-xl bg-gray-200/80 text-gray-500 mx-auto flex items-center justify-center">
+              <Lock className="w-5 h-5" />
+            </div>
+            <h4 className="font-bold text-xs sm:text-sm text-gray-700">Donation Options Locked</h4>
+            <p className="text-xs text-gray-400 max-w-sm mx-auto">
+              Please upload a photo of the food above. Food name, category, quantity, preparation date, and deadline options will appear here right away!
+            </p>
           </div>
-        </form>
+        ) : (
+          /* Unlocked Full Form */
+          <form onSubmit={handleSubmit} className="space-y-6 pt-2 border-t border-gray-100">
+            <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 uppercase tracking-wide">
+              <Utensils className="w-4 h-4" />
+              <span>Step 2: Enter Donation Details</span>
+            </div>
+
+            {/* Food Name & Category */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  Food Name <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="title"
+                  value={form.title}
+                  onChange={handleFormChange}
+                  placeholder="e.g. Vegetable Dum Biryani, Fresh Bread Buns"
+                  required
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  Food Category <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  name="category"
+                  value={form.category}
+                  onChange={handleFormChange}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
+                >
+                  <option value="Cooked Meals">Cooked Meals / Prepared Food</option>
+                  <option value="Bakery & Bread">Bakery &amp; Bread</option>
+                  <option value="Fresh Produce">Fresh Produce (Fruits &amp; Vegetables)</option>
+                  <option value="Packaged Food">Packaged &amp; Canned Groceries</option>
+                  <option value="Dairy & Milk">Dairy &amp; Milk Products</option>
+                  <option value="Beverages">Beverages &amp; Juices</option>
+                  <option value="Other">Other Surplus Food</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Quantity, Unit & Servings */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  Quantity <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  name="quantity"
+                  min="1"
+                  value={form.quantity}
+                  onChange={handleFormChange}
+                  required
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  Unit of Measurement
+                </label>
+                <select
+                  name="unit"
+                  value={form.unit}
+                  onChange={handleFormChange}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
+                >
+                  <option value="servings">servings / portions</option>
+                  <option value="kg">kg (kilograms)</option>
+                  <option value="packets">packets / meal boxes</option>
+                  <option value="boxes">boxes / cartons</option>
+                  <option value="liters">liters</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  Estimated Servings (People Fed) <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  name="estimated_servings"
+                  min="1"
+                  value={form.estimated_servings}
+                  onChange={handleFormChange}
+                  required
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
+                />
+              </div>
+            </div>
+
+            {/* Preparation Date (Date only!) & Pickup Deadline */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  Preparation Date <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  name="prepared_at"
+                  value={form.prepared_at}
+                  onChange={handleFormChange}
+                  required
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
+                />
+                <p className="text-[10px] text-gray-400 mt-1">Date when the food was cooked or packed.</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  Pickup Deadline <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="datetime-local"
+                  name="pickup_deadline"
+                  value={form.pickup_deadline}
+                  onChange={handleFormChange}
+                  required
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
+                />
+                <p className="text-[10px] text-gray-400 mt-1">Latest safe collection time.</p>
+              </div>
+            </div>
+
+            {/* Location & Address */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  Pickup Address / Kitchen Location <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="pickup_location"
+                  value={form.pickup_location}
+                  onChange={handleFormChange}
+                  placeholder="Restaurant address, gate number, or kitchen dispatch bay"
+                  required
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  City &amp; Pincode
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    name="city"
+                    value={form.city}
+                    onChange={handleFormChange}
+                    placeholder="City"
+                    className="w-2/3 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
+                  />
+                  <input
+                    type="text"
+                    name="pincode"
+                    value={form.pincode}
+                    onChange={handleFormChange}
+                    placeholder="Pin"
+                    className="w-1/3 px-2 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition text-center"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Storage & Allergens */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  Storage Instructions
+                </label>
+                <input
+                  type="text"
+                  name="storage_instructions"
+                  value={form.storage_instructions}
+                  onChange={handleFormChange}
+                  placeholder="e.g. Keep refrigerated, or consume within 3 hours"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  Allergen Information
+                </label>
+                <input
+                  type="text"
+                  name="allergen_information"
+                  value={form.allergen_information}
+                  onChange={handleFormChange}
+                  placeholder="e.g. Contains peanuts, dairy, gluten or nut-free"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
+                />
+              </div>
+            </div>
+
+            {/* Additional Notes */}
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                Additional Notes / Pickup Instructions
+              </label>
+              <textarea
+                name="description"
+                rows="2"
+                value={form.description}
+                onChange={handleFormChange}
+                placeholder="e.g. Bring insulated carry boxes; parking available at the rear ramp."
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
+              />
+            </div>
+
+            {/* Submit Button */}
+            <div className="pt-4 flex items-center justify-end gap-3 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => switchTab('donations')}
+                className="px-5 py-2.5 border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-xl transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 text-white text-xs font-bold rounded-xl transition shadow-sm shadow-emerald-600/30 flex items-center gap-2 cursor-pointer"
+              >
+                {submitting ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Publishing Listing...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Publish Food Donation</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     );
   };

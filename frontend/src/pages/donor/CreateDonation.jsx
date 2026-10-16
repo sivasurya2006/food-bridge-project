@@ -7,33 +7,6 @@ import {
   Clock, MapPin, AlertCircle, CheckCircle2, Trash2, Sparkles, Check
 } from 'lucide-react';
 
-const SAMPLE_PRESETS = [
-  {
-    name: 'Meals',
-    title: 'South Indian Veg Meals',
-    category: 'Cooked Meals',
-    url: 'https://images.unsplash.com/photo-1610057099443-fde8c4d50f91?auto=format&fit=crop&w=600&q=80',
-  },
-  {
-    name: 'Biryani',
-    title: 'Vegetable Dum Biryani',
-    category: 'Cooked Meals',
-    url: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=600&q=80',
-  },
-  {
-    name: 'Bakery',
-    title: 'Fresh Breads & Buns',
-    category: 'Bakery & Bread',
-    url: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80',
-  },
-  {
-    name: 'Produce',
-    title: 'Fresh Farm Produce',
-    category: 'Fresh Produce',
-    url: 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=600&q=80',
-  },
-];
-
 export default function CreateDonation() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -41,7 +14,7 @@ export default function CreateDonation() {
 
   // Calculate default deadline: 8 hours from now
   const defaultDeadline = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 16);
-  const defaultPrepared = new Date(Date.now() - 2 * 3600 * 1000).toISOString().slice(0, 16);
+  const defaultPrepared = new Date().toISOString().slice(0, 10);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -65,8 +38,8 @@ export default function CreateDonation() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Step 1 is complete when donor has entered food name AND attached a photo
-  const isStep1Complete = Boolean(formData.title.trim() && previewUrl);
+  // Step 1 is complete when donor has attached a photo
+  const isStep1Complete = Boolean(previewUrl);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -114,27 +87,6 @@ export default function CreateDonation() {
         setError('');
       };
       reader.readAsDataURL(file);
-    }
-  };
-
-  const handleSelectPreset = async (preset) => {
-    setError('');
-    setPreviewUrl(preset.url);
-    if (!formData.title) {
-      setFormData((prev) => ({
-        ...prev,
-        title: preset.title,
-        category: prev.category || preset.category,
-      }));
-    }
-
-    try {
-      const res = await fetch(preset.url);
-      const blob = await res.blob();
-      const file = new File([blob], `${preset.name.toLowerCase()}_sample.jpg`, { type: 'image/jpeg' });
-      setSelectedFile(file);
-    } catch {
-      // Direct URL fallback is handled in handleSubmit
     }
   };
 
@@ -205,8 +157,8 @@ export default function CreateDonation() {
       submitData.append('quantity', parseInt(formData.quantity));
       submitData.append('unit', formData.unit);
       submitData.append('estimated_servings', parseInt(formData.estimated_servings || formData.quantity));
-      submitData.append('prepared_at', formData.prepared_at);
-      submitData.append('pickup_deadline', formData.pickup_deadline);
+      submitData.append('prepared_at', new Date(formData.prepared_at).toISOString());
+      submitData.append('pickup_deadline', new Date(formData.pickup_deadline).toISOString());
       submitData.append('pickup_location', formData.pickup_location);
       submitData.append('city', formData.city);
       submitData.append('pincode', formData.pincode);
@@ -382,64 +334,11 @@ export default function CreateDonation() {
                 </div>
               )}
 
-              {!previewUrl && (
-                <div className="pt-1">
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                    <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-                      Quick option • Or 1-click select a sample food photo:
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {SAMPLE_PRESETS.map((p) => (
-                      <button
-                        key={p.name}
-                        type="button"
-                        onClick={() => handleSelectPreset(p)}
-                        className="flex items-center gap-2.5 p-2 rounded-2xl bg-white hover:bg-emerald-50 border border-gray-200 hover:border-emerald-300 text-left transition group shadow-2xs cursor-pointer"
-                      >
-                        <img
-                          src={p.url}
-                          alt={p.name}
-                          className="w-10 h-10 rounded-xl object-cover shrink-0 border border-gray-100"
-                        />
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-gray-800 group-hover:text-emerald-700 truncate">
-                            {p.name}
-                          </p>
-                          <p className="text-[10px] text-gray-400 truncate">
-                            {p.title}
-                          </p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Food Name / Listing Title */}
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">
-                Food Name / Title *
-              </label>
-              <input
-                type="text"
-                required
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
-                placeholder="e.g. 50 Packs of South Indian Veg Meals (Rice, Sambar, Poriyal)"
-                className="w-full px-4 py-3 rounded-xl border border-gray-300 text-xs sm:text-sm font-semibold focus:ring-2 focus:ring-emerald-500 bg-white"
-              />
-              <p className="text-[11px] text-gray-400 mt-1">
-                Mention the dish name and what food items are included.
-              </p>
             </div>
           </div>
 
           {/* ═══════════════════════════════════════════════════════════
-              HELPER: Shown until Photo + Food Name are entered
+              HELPER: Shown until Photo is entered
           ══════════════════════════════════════════════════════════════ */}
           {!isStep1Complete && (
             <div className="p-5 rounded-3xl bg-amber-50/70 border border-amber-200 text-amber-950 text-xs flex items-center gap-3.5">
@@ -449,7 +348,7 @@ export default function CreateDonation() {
               <div>
                 <h5 className="font-bold text-xs text-amber-900">Unlock Portion &amp; Delivery Details</h5>
                 <p className="text-amber-800 text-[11px] mt-0.5 leading-relaxed">
-                  Please <strong>upload a food photo</strong> and type the <strong>food name</strong> above. The remaining portion, category, and dispatch fields will appear automatically!
+                  Please <strong>upload or snap a food photo</strong> above. Food name, portion, category, preparation date, and pickup deadline options will appear automatically!
                 </p>
               </div>
             </div>
@@ -457,7 +356,7 @@ export default function CreateDonation() {
 
           {/* ═══════════════════════════════════════════════════════════
               STEP 2: Portion, Category & Dispatch Details
-              (Revealed ONLY after Step 1 is filled)
+              (Revealed ONLY after Photo is attached)
           ══════════════════════════════════════════════════════════════ */}
           {isStep1Complete && (
             <div className="space-y-6 pt-2 animate-fadeIn">
@@ -465,7 +364,26 @@ export default function CreateDonation() {
                 <span className="w-6 h-6 rounded-full bg-emerald-600 text-white font-bold text-xs flex items-center justify-center">
                   2
                 </span>
-                <h3 className="font-bold text-sm text-gray-900">Portions, Category &amp; Pickup Details</h3>
+                <h3 className="font-bold text-sm text-gray-900">Food Details, Portions &amp; Pickup Deadline</h3>
+              </div>
+
+              {/* Food Name / Listing Title */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  Food Name / Title *
+                </label>
+                <input
+                  type="text"
+                  required
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  placeholder="e.g. 50 Packs of South Indian Veg Meals (Rice, Sambar, Poriyal)"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-300 text-xs sm:text-sm font-semibold focus:ring-2 focus:ring-emerald-500 bg-white"
+                />
+                <p className="text-[11px] text-gray-400 mt-1">
+                  Mention the dish name and what food items are included.
+                </p>
               </div>
 
               {/* Food Category (Free text input — no restricted dropdown options) */}
@@ -548,14 +466,16 @@ export default function CreateDonation() {
               {/* Time Bounds */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Food Prepared / Packed At</label>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Food Preparation Date *</label>
                   <input
-                    type="datetime-local"
+                    type="date"
+                    required
                     name="prepared_at"
                     value={formData.prepared_at}
                     onChange={handleChange}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 bg-white"
                   />
+                  <p className="text-[10px] text-gray-400 mt-1">Date when the food was cooked or packed.</p>
                 </div>
 
                 <div>
