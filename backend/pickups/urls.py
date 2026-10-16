@@ -2,7 +2,8 @@ from django.urls import path
 from .views import (
     VolunteerAvailableTasksView, VolunteerAcceptTaskView,
     VolunteerMyTasksView, VolunteerVerifyPickupOtpView,
-    NGOActiveDeliveriesView, NGOConfirmReceiptView
+    NGOActiveDeliveriesView, NGOConfirmReceiptView,
+    DonorPickupsView
 )
 
 urlpatterns = [
@@ -12,4 +13,5 @@ urlpatterns = [
     path('pickups/<int:pk>/verify-pickup/', VolunteerVerifyPickupOtpView.as_view(), name='pickup-verify-otp'),
     path('pickups/<int:pk>/confirm-receipt/', NGOConfirmReceiptView.as_view(), name='pickup-confirm-receipt'),
     path('ngo/active-deliveries/', NGOActiveDeliveriesView.as_view(), name='ngo-active-deliveries'),
+    path('donor/pickups/', DonorPickupsView.as_view(), name='donor-pickups'),
 ]

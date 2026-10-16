@@ -199,3 +199,16 @@ class NGOConfirmReceiptView(APIView):
             'message': 'Receipt confirmed successfully! Donation workflow completed.',
             'pickup': PickupSerializer(pickup, context={'request': request}).data
         })
+
+
+class DonorPickupsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        if request.user.role == 'ADMIN':
+            pickups = Pickup.objects.all().order_by('-created_at')
+        else:
+            pickups = Pickup.objects.filter(donation_request__donation__donor=request.user).order_by('-created_at')
+        serializer = PickupSerializer(pickups, many=True, context={'request': request})
+        return Response(serializer.data)
+

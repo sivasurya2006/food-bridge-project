@@ -6,7 +6,7 @@ import {
   HeartHandshake, PlusCircle, LayoutDashboard, Truck,
   Building2, ShieldCheck, LogOut, Menu, X, Inbox,
   ChevronDown, CheckCircle2, Sparkles, Home, Utensils, Info, Shield, User, UserCog,
-  Users, BarChart3, Bell, Settings, AlertTriangle
+  Users, BarChart3, Bell, Settings, AlertTriangle, Clock
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -41,6 +41,13 @@ export default function Navbar() {
       const tabName = path.replace('/admin/', '');
       return location.pathname === path || (location.pathname === '/admin/dashboard' && location.search.includes(`tab=${tabName}`));
     }
+    if (path === '/donor/dashboard') {
+      return (location.pathname === '/donor/dashboard' || location.pathname === '/donor') && (!location.search || location.search.includes('tab=dashboard'));
+    }
+    if (path.startsWith('/donor/')) {
+      const tabName = path.replace('/donor/', '');
+      return location.pathname === path || (location.pathname.startsWith('/donor') && location.search.includes(`tab=${tabName}`));
+    }
     return location.pathname === path;
   };
 
@@ -67,7 +74,7 @@ export default function Navbar() {
       <div className="space-y-6">
         {/* Brand Logo */}
         <Link
-          to={user ? (isAdmin ? '/admin/dashboard' : '/home') : '/login'}
+          to={user ? (isAdmin ? '/admin/dashboard' : isDonor ? '/donor/dashboard' : '/home') : '/login'}
           onClick={closeMobile}
           className="flex items-center gap-3 group px-1"
         >
@@ -92,7 +99,7 @@ export default function Navbar() {
         {/* User Role Card */}
         {user && (
           <Link
-            to="/profile"
+            to={isDonor ? '/donor/profile' : isAdmin ? '/admin/settings' : '/profile'}
             onClick={closeMobile}
             className={`p-3 bg-slate-50 hover:bg-slate-100/90 border border-slate-200/80 ${isAdmin ? 'hover:border-purple-300' : 'hover:border-emerald-300'} rounded-2xl flex items-center gap-3 transition group`}
             title="Click to view & edit your profile"
@@ -204,6 +211,79 @@ export default function Navbar() {
                 </button>
               </nav>
             </div>
+          ) : isDonor ? (
+            /* Dedicated Donor Navigation: EXACT 10 MODULES */
+            <div>
+              <div className="px-3 mb-1.5 text-[10px] font-bold tracking-wider text-emerald-700 uppercase">
+                Donor Control Center
+              </div>
+              <nav className="space-y-1">
+                {/* 1. Dashboard / Overview */}
+                <Link to="/donor/dashboard" onClick={closeMobile} className={navItemClass('/donor/dashboard')}>
+                  <LayoutDashboard className="w-4 h-4 shrink-0" />
+                  <span>1. Dashboard</span>
+                </Link>
+
+                {/* 2. Create Food Donation */}
+                <Link to="/donor/create" onClick={closeMobile} className={navItemClass('/donor/create')}>
+                  <PlusCircle className="w-4 h-4 shrink-0 text-emerald-600" />
+                  <span className="flex-1">2. Create Food Donation</span>
+                  <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.2 rounded-full">Core</span>
+                </Link>
+
+                {/* 3. My Donations */}
+                <Link to="/donor/donations" onClick={closeMobile} className={navItemClass('/donor/donations')}>
+                  <Utensils className="w-4 h-4 shrink-0" />
+                  <span>3. My Donations</span>
+                </Link>
+
+                {/* 4. NGO Requests */}
+                <Link to="/donor/requests" onClick={closeMobile} className={navItemClass('/donor/requests')}>
+                  <Inbox className="w-4 h-4 shrink-0 text-amber-600" />
+                  <span className="flex-1">4. NGO Requests</span>
+                </Link>
+
+                {/* 5. Pickup & Delivery Tracking */}
+                <Link to="/donor/pickups" onClick={closeMobile} className={navItemClass('/donor/pickups')}>
+                  <Truck className="w-4 h-4 shrink-0 text-blue-600" />
+                  <span className="flex-1">5. Pickup &amp; Delivery</span>
+                </Link>
+
+                {/* 6. Donation History */}
+                <Link to="/donor/history" onClick={closeMobile} className={navItemClass('/donor/history')}>
+                  <Clock className="w-4 h-4 shrink-0" />
+                  <span>6. Donation History</span>
+                </Link>
+
+                {/* 7. Impact & Analytics */}
+                <Link to="/donor/analytics" onClick={closeMobile} className={navItemClass('/donor/analytics')}>
+                  <BarChart3 className="w-4 h-4 shrink-0" />
+                  <span>7. Impact &amp; Analytics</span>
+                </Link>
+
+                {/* 8. Notifications */}
+                <Link to="/donor/notifications" onClick={closeMobile} className={navItemClass('/donor/notifications')}>
+                  <Bell className="w-4 h-4 shrink-0" />
+                  <span>8. Notifications</span>
+                </Link>
+
+                {/* 9. My Profile */}
+                <Link to="/donor/profile" onClick={closeMobile} className={navItemClass('/donor/profile')}>
+                  <User className="w-4 h-4 shrink-0" />
+                  <span>9. My Profile</span>
+                </Link>
+
+                {/* 10. Logout */}
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-rose-700 hover:bg-rose-50 transition cursor-pointer text-left"
+                >
+                  <LogOut className="w-4 h-4 shrink-0 text-rose-600" />
+                  <span>10. Logout</span>
+                </button>
+              </nav>
+            </div>
           ) : (
             /* Standard Navigation for Public / Non-Admin Users */
             <>
@@ -239,26 +319,6 @@ export default function Navbar() {
                     {user.role} Workspace
                   </div>
                   <nav className="space-y-1">
-                    {isDonor && (
-                      <>
-                        <Link to="/donor/dashboard" onClick={closeMobile} className={navItemClass('/donor/dashboard')}>
-                          <LayoutDashboard className="w-4 h-4 shrink-0" />
-                          <span>Donor Portal</span>
-                        </Link>
-                        <Link to="/donor/create" onClick={closeMobile} className={navItemClass('/donor/create')}>
-                          <PlusCircle className="w-4 h-4 shrink-0" />
-                          <span>+ List Food</span>
-                        </Link>
-                        <Link to="/donor/requests" onClick={closeMobile} className={navItemClass('/donor/requests')}>
-                          <Inbox className="w-4 h-4 shrink-0" />
-                          <span>Incoming Requests</span>
-                        </Link>
-                        <Link to="/profile" onClick={closeMobile} className={navItemClass('/profile')}>
-                          <User className="w-4 h-4 shrink-0" />
-                          <span>My Profile</span>
-                        </Link>
-                      </>
-                    )}
 
                     {isNGO && (
                       <>

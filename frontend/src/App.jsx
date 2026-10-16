@@ -100,12 +100,20 @@ export default function App() {
               <Route path="/how-it-works" element={<HowItWorks />} />
               <Route path="/safety" element={<SafetyGuidelines />} />
 
-              {/* Protected Donor Routes */}
+              {/* Protected Donor Routes: EXACT 10 MODULES */}
+              <Route
+                path="/donor"
+                element={
+                  <ProtectedRoute allowedRoles={['DONOR', 'ADMIN']}>
+                    <DonorDashboard defaultTab="dashboard" />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/donor/dashboard"
                 element={
                   <ProtectedRoute allowedRoles={['DONOR', 'ADMIN']}>
-                    <DonorDashboard />
+                    <DonorDashboard defaultTab="dashboard" />
                   </ProtectedRoute>
                 }
               />
@@ -113,7 +121,15 @@ export default function App() {
                 path="/donor/create"
                 element={
                   <ProtectedRoute allowedRoles={['DONOR', 'ADMIN']}>
-                    <CreateDonation />
+                    <DonorDashboard defaultTab="create" />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/donor/donations"
+                element={
+                  <ProtectedRoute allowedRoles={['DONOR', 'ADMIN']}>
+                    <DonorDashboard defaultTab="donations" />
                   </ProtectedRoute>
                 }
               />
@@ -121,15 +137,51 @@ export default function App() {
                 path="/donor/requests"
                 element={
                   <ProtectedRoute allowedRoles={['DONOR', 'ADMIN']}>
-                    <IncomingRequests />
+                    <DonorDashboard defaultTab="requests" />
                   </ProtectedRoute>
                 }
               />
               <Route
                 path="/donor/incoming-requests"
+                element={<Navigate to="/donor/requests" replace />}
+              />
+              <Route
+                path="/donor/pickups"
                 element={
                   <ProtectedRoute allowedRoles={['DONOR', 'ADMIN']}>
-                    <IncomingRequests />
+                    <DonorDashboard defaultTab="pickups" />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/donor/history"
+                element={
+                  <ProtectedRoute allowedRoles={['DONOR', 'ADMIN']}>
+                    <DonorDashboard defaultTab="history" />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/donor/analytics"
+                element={
+                  <ProtectedRoute allowedRoles={['DONOR', 'ADMIN']}>
+                    <DonorDashboard defaultTab="analytics" />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/donor/notifications"
+                element={
+                  <ProtectedRoute allowedRoles={['DONOR', 'ADMIN']}>
+                    <DonorDashboard defaultTab="notifications" />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/donor/profile"
+                element={
+                  <ProtectedRoute allowedRoles={['DONOR', 'ADMIN']}>
+                    <DonorDashboard defaultTab="profile" />
                   </ProtectedRoute>
                 }
               />

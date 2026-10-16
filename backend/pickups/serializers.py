@@ -16,6 +16,8 @@ class PickupSerializer(serializers.ModelSerializer):
     receiver_phone = serializers.ReadOnlyField(source='donation_request.receiver.phone')
     receiver_address = serializers.ReadOnlyField(source='donation_request.receiver.address')
     volunteer_username = serializers.ReadOnlyField(source='volunteer.username')
+    volunteer_phone = serializers.ReadOnlyField(source='volunteer.phone')
+    volunteer_vehicle = serializers.SerializerMethodField()
     display_otp = serializers.SerializerMethodField()
 
     class Meta:
@@ -25,10 +27,15 @@ class PickupSerializer(serializers.ModelSerializer):
             'quantity', 'unit', 'pickup_deadline', 'pickup_location',
             'donor_username', 'donor_phone', 'receiver_username',
             'receiver_org_name', 'receiver_phone', 'receiver_address',
-            'volunteer', 'volunteer_username', 'status', 'display_otp',
+            'volunteer', 'volunteer_username', 'volunteer_phone', 'volunteer_vehicle', 'status', 'display_otp',
             'pickup_time', 'delivery_time', 'volunteer_notes', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'status', 'created_at', 'updated_at']
+
+    def get_volunteer_vehicle(self, obj):
+        if obj.volunteer and hasattr(obj.volunteer, 'volunteer_profile'):
+            return obj.volunteer.volunteer_profile.vehicle_type
+        return 'Bike'
 
     def get_receiver_org_name(self, obj):
         if hasattr(obj.donation_request.receiver, 'org_profile'):

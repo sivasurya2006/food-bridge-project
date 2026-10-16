@@ -58,6 +58,7 @@ export const api = {
   verifyPickupOtp: (pickupId, otpCode) => apiClient.post(`/pickups/${pickupId}/verify-pickup/`, { otp_code: otpCode }),
   getNgoActiveDeliveries: () => apiClient.get('/ngo/active-deliveries/'),
   confirmNgoReceipt: (pickupId) => apiClient.post(`/pickups/${pickupId}/confirm-receipt/`),
+  getDonorPickups: () => apiClient.get('/donor/pickups/'),
 
   // Analytics & Notifications
   getAnalyticsSummary: () => apiClient.get('/analytics/summary/'),
